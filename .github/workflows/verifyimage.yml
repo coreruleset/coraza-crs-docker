@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  REPO: "corazawaf/caddy-crs"
+  REPO: "corazawaf/coraza-crs"
 
 jobs:
   prepare:

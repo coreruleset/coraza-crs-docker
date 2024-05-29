@@ -2,14 +2,14 @@
 ARG CADDY_VERSION="2.6.2"
 
 # Use official Caddy builder image
-FROM caddy:"${CADDY_VERSION}-builder" as builder-caddy
+FROM caddy:"${CADDY_VERSION}-builder" AS builder-caddy
 
 # Build Caddy with Coraza
 RUN --mount=type=cache,target=/go,id=caddy \
   xcaddy build --with github.com/corazawaf/coraza-caddy
 
 # Use official caddy builder image to get Core Rule Set
-FROM caddy:"${CADDY_VERSION}-builder" as builder-crs
+FROM caddy:"${CADDY_VERSION}-builder" AS builder-crs
 
 # Set OWASP ModSecurity core rule set release tag to check out
 # Available tags are on the GitHub releases page here: https://github.com/coreruleset/coreruleset/tags
@@ -50,7 +50,7 @@ RUN --mount=type=cache,target=/var/tmp,id=crs \
   cp /var/tmp/owasp-crs/crs-setup.conf.example /opt/coraza/config/crs-setup.conf
 
 # Use Caddy image to retrieve esh
-FROM caddy:"${CADDY_VERSION}-builder" as builder-esh
+FROM caddy:"${CADDY_VERSION}-builder" AS builder-esh
 
 # Get esh and set permissions
 RUN set -eux; \

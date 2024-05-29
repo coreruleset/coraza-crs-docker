@@ -18,8 +18,8 @@ variable "coraza-version" {
 variable "REPOS" {
     # List of repositories to tag
     default = [
-        "corazawaf/caddy-crs",
-        "ghcr.io/corazawaf/caddy-crs",
+        "corazawaf/coraza-crs",
+        "ghcr.io/corazawaf/coraza-crs",
     ]
 }
 
@@ -78,7 +78,7 @@ target "caddy-alpine" {
     inherits = ["platforms-base"]
     context="./caddy"
     dockerfile="Dockerfile"
-    tags = concat(tag("alpine"),
-        vtag("${crs-version}", "alpine")
+    tags = concat(tag("caddy-alpine"),
+        vtag("${crs-version}", "caddy-alpine")
     )
 }
