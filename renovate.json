@@ -1,0 +1,83 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "",
+    "schedule:weekly"
+  ],
+  "enabledManagers": [
+    "custom.regex"
+  ],
+  "packageRules": [
+    {
+      "groupName": "all non-major dependencies",
+      "groupSlug": "all-minor-patch",
+      "matchPackagePatterns": [
+        "*"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "prBodyColumns": [
+        "Package",
+        "Type",
+        "Update",
+        "Change",
+        "Pending"
+      ]
+    },
+    {
+      "groupName": "all major dependencies",
+      "groupSlug": "all-major",
+      "matchPackagePatterns": [
+        "*"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "prBodyColumns": [
+        "Package",
+        "Type",
+        "Update",
+        "Change",
+        "Pending"
+      ]
+    }
+  ],
+  "customManagers": [
+    {
+      "description": "Bake file",
+      "customType": "regex",
+      "fileMatch": [
+        "^docker-bake\\.hcl$"
+      ],
+      "matchStrings": [
+        "depName=(?<depName>[^\\s]+)(?:\\s+packageName=(?<packageName>[^\\s]+))?\\s+datasource=(?<datasource>[^\\s]+)\\s+[^\"]+\"(?<currentValue>[^\"]+)\""
+      ]
+    },
+    {
+      "description": "Docs: caddy",
+      "customType": "regex",
+      "fileMatch": [
+        "^README\\.md$"
+      ],
+      "matchStrings": [
+        ".*on Caddy (?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "caddy",
+      "datasourceTemplate": "docker"
+    },
+    {
+      "description": "Docs: CRS",
+      "customType": "regex",
+      "fileMatch": [
+        "^README\\.md$"
+      ],
+      "matchStrings": [
+        "OWASP CRS (?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "coreruleset/coreruleset",
+      "datasourceTemplate": "github-releases"
+    }
+  ]
+}

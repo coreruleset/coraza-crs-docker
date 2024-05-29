@@ -18,8 +18,8 @@ services:
 
   ## Coraza WAF running on Caddy
   caddy:
-    image: caddy-coraza-waf
-    build: ./alpine
+    image: coraza-waf
+    build: ./caddy
     depends_on:
       - whoami
     networks:

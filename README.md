@@ -76,6 +76,33 @@ Various arguments can be provided if building the container yourself. The availa
 | `CADDY_CONFIG_DIR` | `/config`    | The Caddy configuration directory.                                                                                                                           |
 | `CADDY_DATA_DIR`   | `/data`      | The Caddy data directory. SSL certificates will be stored here if Caddy will be generating them for you. It is recommended that this be mounted as a volume. |
 
+### Building
+
+We require a version of `buildx` >= v0.9.1. [Visit the official documentation](https://docs.docker.com/build/architecture/#install-buildx) for instructions on installing and upgrading `buildx`. You can check which version you have using:
+
+```bash
+docker buildx version
+github.com/docker/buildx v0.9.1 ed00243a0ce2a0aee75311b06e32d33b44729689
+```
+
+If you want to see the targets of the build, use:
+
+```bash
+docker buildx bake -f ./docker-bake.hcl --print
+```
+
+To build for any platforms of your choosing, just use this example:
+
+```bash
+docker buildx create --use --platform linux/amd64,linux/i386,linux/arm64,linux/arm/v7
+docker buildx bake -f docker-bake.hcl
+```
+
+To build a specific target for a single platform only (replace target and platform strings in the example with the your choices):
+
+```bash
+docker buildx bake -f docker-bake.hcl --set "*.platform=linux/amd64" caddy-alpine
+
 ## Advanced Configuration
 
 If you prefer to configure Caddy and/or Coraza yourself there are multiple options.

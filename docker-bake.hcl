@@ -1,0 +1,84 @@
+# docker-bake.hcl
+variable "crs-version" {
+    # renovate: depName=coreruleset/coreruleset datasource=github-releases
+    default = "4.3.0"
+}
+
+variable "caddy-version" {
+    # renovate: depName=caddy datasource=docker
+    default = "2.7.6"
+}
+
+variable "coraza-version" {
+    # renovate: depName=corazawaf/coraza-caddy datasource=github-releases
+    default = "v2.0.0-rc.3"
+}
+
+
+variable "REPOS" {
+    # List of repositories to tag
+    default = [
+        "corazawaf/caddy-crs",
+        "ghcr.io/corazawaf/caddy-crs",
+    ]
+}
+
+function "major" {
+    params = [version]
+    result = split(".", version)[0]
+}
+
+function "minor" {
+    params = [version]
+    result = join(".", slice(split(".", version),0,2))
+}
+
+function "patch" {
+    params = [version]
+    result = join(".", slice(split(".", version),0,3))
+}
+
+function "tag" {
+    params = [tag]
+    result = [for repo in REPOS : "${repo}:${tag}"]
+}
+
+function "vtag" {
+    params = [semver, variant]
+    result = concat(
+        tag("${major(semver)}-${variant}-${formatdate("YYYYMMDDHHMM", timestamp())}"),
+        tag("${minor(semver)}-${variant}-${formatdate("YYYYMMDDHHMM", timestamp())}"),
+        tag("${patch(semver)}-${variant}-${formatdate("YYYYMMDDHHMM", timestamp())}")
+    )
+}
+
+group "default" {
+    targets = [
+        "caddy-alpine",
+    ]
+}
+
+target "docker-metadata-action" {}
+
+target "platforms-base" {
+    inherits = ["docker-metadata-action"]
+    context="."    
+    platforms = ["linux/amd64", "linux/arm64/v8", "linux/arm/v7", "linux/i386"]
+    labels = {
+        "org.opencontainers.image.source" = "https://github.com/corazawaf/coraza-crs-docker"
+    }
+    args = {
+        CRS_RELEASE = "${crs-version}"
+        CADDY_VERSION = "${caddy-version}"
+        CORAZA_VERSION = "${coraza-version}"
+    }
+}
+
+target "caddy-alpine" {
+    inherits = ["platforms-base"]
+    context="./caddy"
+    dockerfile="Dockerfile"
+    tags = concat(tag("alpine"),
+        vtag("${crs-version}", "alpine")
+    )
+}
