@@ -41,12 +41,6 @@ These values control Caddy.
 
 - The container is configured by default to run as a non-root user. The upstream Caddy containers run using root by default. To allow binding on ports <1024 `cap_net_bind_service` is added on the Caddy binary.
 
-- Buildkit must be used to build the Docker image:
-
-```bash
-docker build -t caddy-coraza-waf ./alpine
-```
-
 ## Configuration Files/Directories
 
 The following configuration files/directories exist within the container:
@@ -66,7 +60,7 @@ Various arguments can be provided if building the container yourself. The availa
 
 | Variable           | Default      | Description                                                                                                                                                  |
 | ------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `CADDY_TAG`        | `2.6.2`      | The Caddy Docker container tag to use as a base.                                                                                                             |
+| `CADDY_VERSION`    | `2.7.6`      | The Caddy Docker container tag to use as a base.                                                                                                             |
 | `CRS_TAG`          | `v4.3.0` | The OWASP Core Rule Set release tag.                                                                                                                         |
 | `LIBCAP`           | `true`       | Install libcap and add the `cap_net_bind_service` capability to the Caddy binary. Required for the container to bind to low ports when not running as root.  |
 | `CADDY_USER`       | `caddy`      | The user name that will run Caddy. Can be set to `root` to run Caddy as root rather than a low privleged user.                                               |
