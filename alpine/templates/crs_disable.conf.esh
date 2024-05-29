@@ -1,0 +1,4 @@
+# Disable the following rule ID's
+<% if [ ! -z ${CORAZA_REMOVERULEIDS+x} ]; then -%>
+SecRuleRemoveById <%= $CORAZA_REMOVERULEIDS %>
+<% fi -%>

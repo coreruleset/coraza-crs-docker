@@ -1,0 +1,37 @@
+---
+
+# Docker compose for example for the Coraza WAF
+# This example assumes Docker is running in swarm mode
+# Traefik will be used as the front end server accepting inbound connections and terminating SSL.
+# The Coraza WAF will be used to protect the backend "whoami" service.
+
+version: '3.8'
+
+services:
+
+  ## The "whoami" container
+  ## This is the container that the WAF will be protecting
+  whoami:
+    image: traefik/whoami
+    networks:
+      - whoami
+
+  ## Coraza WAF running on Caddy
+  caddy:
+    image: caddy-coraza-waf
+    build: ./alpine
+    depends_on:
+      - whoami
+    networks:
+      - whoami
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - CADDY_REVERSE_PROXY=whoami:80
+      - CORAZA_SECRULEENGINE=On
+
+## Networks used by the above services
+networks:
+  ## Basic network used for the containers
+  whoami:
