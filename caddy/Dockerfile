@@ -16,8 +16,9 @@ FROM caddy:"${CADDY_VERSION}-builder" AS builder-crs
 ARG CRS_VERSION="n/a"
 
 # Get OWASP ModSecurity Core Rule Set and main configuration file
-RUN --mount=type=cache,target=/var/tmp,id=crs \
-  set -eux; \
+# Ideally we can get back this cache: --mount=type=cache,target=/var/tmp,id=crs \
+# But it seems that the cache is not working as expected on multi arch builds
+RUN set -eux; \
   # Only retrieve and extract rule set if not existing due to cache layer
   if [ ! -d "/var/tmp/owasp-crs" ]; \
   then \
