@@ -63,7 +63,7 @@ target "docker-metadata-action" {}
 target "platforms-base" {
     inherits = ["docker-metadata-action"]
     context="."    
-    platforms = ["linux/amd64", "linux/arm64/v8", "linux/arm/v7", "linux/i386"]
+    platforms = ["linux/amd64", "linux/arm64/v6", "linux/arm/v7", "linux/arm64"]
     labels = {
         "org.opencontainers.image.source" = "https://github.com/corazawaf/coraza-crs-docker"
     }
