@@ -4,6 +4,8 @@
 set -e
 echo "Generating configuration files..."
 
+defined_envs=$(printf '${%s} ' $(awk "END { for (name in ENVIRON) { print ( name ~ /${filter}/ ) ? name : \"\" } }" < /dev/null ))
+
 # Test if Caddyfile has been mounted in a volume by the user; if so that will be used rather than the default
 echo "  - Caddyfile"
 if [ -f "/config/caddy/Caddyfile" ]; then
@@ -11,8 +13,8 @@ if [ -f "/config/caddy/Caddyfile" ]; then
   cp "/config/caddy/Caddyfile" "/etc/caddy/Caddyfile"
   echo "    - Done"
 else
-  echo "    - Generating Caddyfile from template /templates/Caddyfile.esh"
-  esh -o "/etc/caddy/Caddyfile" "/templates/Caddyfile.esh"
+  echo "    - Generating Caddyfile from template /templates/Caddyfile"
+  envsubst "${defined_envs}" < "/templates/Caddyfile" > "/etc/caddy/Caddyfile"
   caddy fmt --overwrite /etc/caddy/Caddyfile
   echo "    - Done"
 fi
@@ -24,16 +26,10 @@ if [ -f "/config/coraza/coraza.conf" ]; then
   cp "/config/coraza/coraza.conf" "/opt/coraza/config/coraza.conf"
   echo "    - Done"
 else
-  echo "    - Generating Caddyfile from template /templates/coraza.conf.esh"
-  esh -o "/opt/coraza/config/coraza.conf" "/templates/coraza.conf.esh"
+  echo "    - Generating Caddyfile from template /templates/coraza.conf"
+  envsubst "${defined_envs}" < "/templates/coraza.conf" > "/opt/coraza/config/coraza.conf"
   echo "    - Done"
 fi
-
-# Add any rule overrides if required
-echo "  - Core rule set overrides"
-echo "    - Generating core rule set overrides from template /templates/crs_disable.conf.esh"
-esh -o "/opt/coraza/overrides/crs_disable.conf" "/templates/crs_disable.conf.esh"
-echo "    - Done"
 
 # Launch Caddy
 echo "Launching $*"

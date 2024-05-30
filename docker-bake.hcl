@@ -68,7 +68,7 @@ target "platforms-base" {
         "org.opencontainers.image.source" = "https://github.com/corazawaf/coraza-crs-docker"
     }
     args = {
-        CRS_RELEASE = "${crs-version}"
+        CRS_VERSION = "${crs-version}"
         CADDY_VERSION = "${caddy-version}"
         CORAZA_VERSION = "${coraza-version}"
     }
@@ -76,8 +76,8 @@ target "platforms-base" {
 
 target "caddy-alpine" {
     inherits = ["platforms-base"]
-    context="./caddy"
-    dockerfile="Dockerfile"
+    context="."
+    dockerfile="caddy/Dockerfile"
     tags = concat(tag("caddy-alpine"),
         vtag("${crs-version}", "caddy-alpine")
     )
