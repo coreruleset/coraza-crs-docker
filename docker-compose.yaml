@@ -17,9 +17,8 @@ services:
       - whoami
 
   ## Coraza WAF running on Caddy
-  caddy:
-    image: coraza-waf
-    build: ./caddy
+  coraza-crs:
+    image: corazawaf/coraza-crs:caddy-alpine
     depends_on:
       - whoami
     networks:
@@ -28,7 +27,7 @@ services:
       - "80:80"
       - "443:443"
     environment:
-      - CADDY_REVERSE_PROXY=whoami:80
+      - BACKEND=whoami:80
       - CORAZA_SECRULEENGINE=On
 
 ## Networks used by the above services

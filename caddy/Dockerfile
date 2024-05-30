@@ -1,5 +1,5 @@
 # Set Caddy release tag
-ARG CADDY_VERSION="2.6.2"
+ARG CADDY_VERSION="n/a"
 
 # Use official Caddy builder image
 FROM caddy:"${CADDY_VERSION}-builder" AS builder-caddy
@@ -13,7 +13,7 @@ FROM caddy:"${CADDY_VERSION}-builder" AS builder-crs
 
 # Set OWASP ModSecurity core rule set release tag to check out
 # Available tags are on the GitHub releases page here: https://github.com/coreruleset/coreruleset/tags
-ARG CRS_VERSION="v4.3.0"
+ARG CRS_VERSION="n/a"
 
 # Get OWASP ModSecurity Core Rule Set and main configuration file
 RUN --mount=type=cache,target=/var/tmp,id=crs \
@@ -22,7 +22,7 @@ RUN --mount=type=cache,target=/var/tmp,id=crs \
   if [ ! -d "/var/tmp/owasp-crs" ]; \
   then \
     # Get rule set archive
-    wget -q -O "/var/tmp/crs-${CRS_VERSION}.tar.gz" "https://github.com/coreruleset/coreruleset/archive/refs/tags/${CRS_VERSION}.tar.gz"; \
+    wget -q -O "/var/tmp/crs-${CRS_VERSION}.tar.gz" "https://github.com/coreruleset/coreruleset/archive/refs/tags/v${CRS_VERSION}.tar.gz"; \
     # Extract rule set
     mkdir /var/tmp/owasp-crs; \
     tar x -z \
@@ -35,27 +35,25 @@ RUN --mount=type=cache,target=/var/tmp,id=crs \
   mkdir -p \
     # Main configuration directory
     /opt/coraza/config \
-    # Additional rules directory (not used yet)
+    # Main rules directory
     /opt/coraza/rules \
+    # Plugins directory
+    /opt/coraza/plugins \
     # User configuration directory
     /opt/coraza/config.d \
     # User rule directory
     /opt/coraza/rules.d \
     # Rule/configuration overrides
     /opt/coraza/overrides \
+    # CRS rules directory
+    /opt/coraza/owasp-crs \
   ; \
   # Copy rule set into rules dir
   cp -r /var/tmp/owasp-crs/rules /opt/coraza/owasp-crs; \
+  # Copy plugins directory
+  cp -r /var/tmp/owasp-crs/plugins /opt/coraza/owasp-crs; \
   # Copy CRS setup file into config dir
   cp /var/tmp/owasp-crs/crs-setup.conf.example /opt/coraza/config/crs-setup.conf
-
-# Use Caddy image to retrieve esh
-FROM caddy:"${CADDY_VERSION}-builder" AS builder-esh
-
-# Get esh and set permissions
-RUN set -eux; \
-  wget -q -O /usr/local/bin/esh "https://raw.githubusercontent.com/jirutka/esh/master/esh"; \
-  chmod +x /usr/local/bin/esh
 
 # Switch to official Caddy container
 FROM caddy:"$CADDY_VERSION"
@@ -126,20 +124,72 @@ RUN set -eux; \
     echo "Skipping libcap installation and cap_net_bind_service capability for Caddy"; \
   fi
 
-# Copy our confd from build-confd
-COPY --from=builder-esh /usr/local/bin/esh /usr/local/bin/esh
+# USe envsubst instead of esh
+RUN apk add --no-cache envsubst
 
 # Add configuration templates
-COPY ./templates /templates
+COPY src/templates /templates
 
 # Add entrypoint script
-COPY ./entrypoint.sh /entrypoint.sh
+COPY caddy/entrypoint.sh /entrypoint.sh
 
 # Switch user
 USER "${CADDY_USER}:${CADDY_GROUP}"
 
 # Set env variables for config/data directories
-ENV XDG_CONFIG_HOME="$CADDY_CONFIG_DIR" XDG_DATA_HOME="$CADDY_DATA_DIR"
+ENV \
+    XDG_CONFIG_HOME="$CADDY_CONFIG_DIR" \
+    XDG_DATA_HOME="$CADDY_DATA_DIR" \
+    ACCESSLOG=/var/log/nginx/access.log \
+    BACKEND=localhost:80 \
+    DNS_SERVER= \
+    ERRORLOG=/var/log/nginx/error.log \
+    KEEPALIVE_TIMEOUT=60s \
+    METRICS_ALLOW_FROM='127.0.0.0/24' \
+    METRICS_DENY_FROM='all' \
+    METRICSLOG=/dev/null \
+    CORAZA_ARGUMENT_SEPARATOR="&" \
+    CORAZA_ARGUMENTS_LIMIT=1000 \
+    CORAZA_AUDIT_ENGINE="RelevantOnly" \
+    CORAZA_AUDIT_LOG=/dev/stdout \
+    CORAZA_AUDIT_LOG_FORMAT=JSON \
+    CORAZA_AUDIT_LOG_PARTS='ABIJDEFHZ' \
+    CORAZA_AUDIT_LOG_RELEVANT_STATUS="^(?:5|4[0-9][0-35-9])" \
+    CORAZA_AUDIT_LOG_TYPE=Serial \
+    CORAZA_COOKIE_FORMAT=0 \
+    CORAZA_AUDIT_STORAGE_DIR=/var/log/modsecurity/audit/ \
+    CORAZA_DATA_DIR=/tmp/modsecurity/data \
+    CORAZA_DEBUG_LOG=/dev/null \
+    CORAZA_DEBUG_LOGLEVEL=0 \
+    CORAZA_DEFAULT_PHASE1_ACTION="phase:1,pass,log,tag:'\${CORAZA_TAG}'" \
+    CORAZA_DEFAULT_PHASE2_ACTION="phase:2,pass,log,tag:'\${CORAZA_TAG}'" \
+    CORAZA_DISABLE_BACKEND_COMPRESSION="Off" \
+    CORAZA_PCRE_MATCH_LIMIT=100000 \
+    CORAZA_PCRE_MATCH_LIMIT_RECURSION=100000 \
+    CORAZA_REQ_BODY_ACCESS=on \
+    CORAZA_REQ_BODY_JSON_DEPTH_LIMIT=512 \
+    CORAZA_REQ_BODY_LIMIT=13107200 \
+    CORAZA_REQ_BODY_LIMIT_ACTION="Reject" \
+    CORAZA_REQ_BODY_NOFILES_LIMIT=131072 \
+    CORAZA_RESP_BODY_ACCESS=on \
+    CORAZA_RESP_BODY_LIMIT=1048576 \
+    CORAZA_RESP_BODY_LIMIT_ACTION="ProcessPartial" \
+    CORAZA_RESP_BODY_MIMETYPE="text/plain text/html text/xml" \
+    CORAZA_RULE_ENGINE=on \
+    CORAZA_STATUS_ENGINE="Off" \
+    CORAZA_TAG=modsecurity \
+    CORAZA_TMP_DIR=/tmp/modsecurity/tmp \
+    CORAZA_TMP_SAVE_UPLOADED_FILES="on" \
+    CORAZA_UNICODE_MAPPING=20127 \
+    CORAZA_UPLOAD_DIR=/tmp/modsecurity/upload \
+    CORAZA_UPLOAD_FILE_MODE=0600 \
+    CORAZA_UPLOAD_KEEP_FILES=Off \
+    PORT=8080 \
+    # CRS specific variables
+    PARANOIA=1 \
+    ANOMALY_INBOUND=5 \
+    ANOMALY_OUTBOUND=4 \
+    BLOCKING_PARANOIA=1
 
 # Create default volumes
 VOLUME "$CADDY_CONFIG_DIR" "$CADDY_DATA_DIR"

@@ -15,40 +15,32 @@
     # Main configuration file
     include /opt/coraza/config/coraza.conf
 
-<% if test -d "/opt/coraza/config.d"; then -%>
     # User defined configuration files
     include /opt/coraza/config.d/*.conf
-<% else -%>
-    # No user defined configuration files available
-    # Mount volume at /opt/coraza/config.d containing configuration if required
-    #include /opt/coraza/config.d/*.conf
-<% fi -%>
 
     # OWASP Core Rule Set (CRS) Setup
     include /opt/coraza/config/crs-setup.conf
 
+    include /opt/coraza/owasp-crs/plugins/*-config.conf
+    include /opt/coraza/owasp-crs/plugins/*-before.conf
+
     # OWASP Core Rule Set (CRS)
-    include /opt/coraza/owasp-crs/*.conf
+    include /opt/coraza/owasp-crs/rules/*.conf
+
+    include /opt/coraza/owasp-crs/plugins/*-after.conf
 
     # Other baked in rule sets or configurations
     include /opt/coraza/rules/*.conf
 
-<% if test -d "/opt/coraza/rules.d"; then -%>
     # User defined rule sets
     include /opt/coraza/rules.d/*.conf
-<% else -%>
-    # No user defined rule files available
-    # Mount volume at /opt/coraza/rules.d containing configuration if required
-    #include /opt/coraza/rules.d/*.conf
-<% fi -%>
 
     # Any overrides specified in env vars
     include /opt/coraza/overrides/*.conf
-
   }
 
   # Proxy traffic to the relevant container(s)
-  reverse_proxy <%= $CADDY_REVERSE_PROXY %> {
+  reverse_proxy ${BACKEND} {
     trusted_proxies private_ranges
   }
 
