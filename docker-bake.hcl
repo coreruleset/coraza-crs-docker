@@ -18,7 +18,7 @@ variable "coraza-version" {
 variable "REPOS" {
     # List of repositories to tag
     default = [
-        "corazawaf/coraza-crs",
+      #"corazawaf/coraza-crs",
         "ghcr.io/corazawaf/coraza-crs",
     ]
 }
@@ -63,7 +63,7 @@ target "docker-metadata-action" {}
 target "platforms-base" {
     inherits = ["docker-metadata-action"]
     context="."    
-    platforms = ["linux/amd64", "linux/arm64/v6", "linux/arm/v7", "linux/arm64"]
+    platforms = ["linux/amd64", "linux/arm/v6", "linux/arm/v7", "linux/arm64"]
     labels = {
         "org.opencontainers.image.source" = "https://github.com/corazawaf/coraza-crs-docker"
     }
