@@ -61,7 +61,7 @@ Various arguments can be provided if building the container yourself. The availa
 | Variable           | Default      | Description                                                                                                                                                  |
 | ------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `CADDY_VERSION`    | `2.7.6`      | The Caddy Docker container tag to use as a base.                                                                                                             |
-| `CRS_TAG`          | `v4.3.0` | The OWASP Core Rule Set release tag.                                                                                                                         |
+| `CRS_VERSION`      | `v4.3.0`     | The OWASP CRS release.                                                                                                                                       |
 | `LIBCAP`           | `true`       | Install libcap and add the `cap_net_bind_service` capability to the Caddy binary. Required for the container to bind to low ports when not running as root.  |
 | `CADDY_USER`       | `caddy`      | The user name that will run Caddy. Can be set to `root` to run Caddy as root rather than a low privleged user.                                               |
 | `CADDY_GROUP`      | `caddy`      | The group name for the Caddy user. Can be set to `root` to run Caddy as root rather than a low privleged user.                                               |
