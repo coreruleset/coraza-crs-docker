@@ -18,8 +18,8 @@ variable "coraza-version" {
 variable "REPOS" {
     # List of repositories to tag
     default = [
-      #"corazawaf/coraza-crs",
-        "ghcr.io/corazawaf/coraza-crs",
+      #"owasp/coraza-crs",
+        "ghcr.io/coreruleset/coraza-crs",
     ]
 }
 
@@ -65,7 +65,7 @@ target "platforms-base" {
     context="."    
     platforms = ["linux/amd64", "linux/arm/v6", "linux/arm/v7", "linux/arm64"]
     labels = {
-        "org.opencontainers.image.source" = "https://github.com/corazawaf/coraza-crs-docker"
+        "org.opencontainers.image.source" = "https://github.com/coreruleset/coraza-crs-docker"
     }
     args = {
         CRS_VERSION = "${crs-version}"
