@@ -97,6 +97,10 @@ To build a specific target for a single platform only (replace target and platfo
 ```bash
 docker buildx bake -f docker-bake.hcl --set "*.platform=linux/amd64" caddy-alpine
 
+## Adding CRS Plugins
+
+To add CRS Plugins, download and decompress the plugin to a directory of your choice. Then start the container bind mounting the directory to `/opt/coraza/owasp-crs/plugins`.
+
 ## Advanced Configuration
 
 If you prefer to configure Caddy and/or Coraza yourself there are multiple options.
