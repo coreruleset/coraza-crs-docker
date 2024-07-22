@@ -18,7 +18,7 @@ services:
 
   ## Coraza WAF running on Caddy
   coraza-crs:
-    image: coreruleset/coraza-crs:caddy-alpine
+    image: ghcr.io/coreruleset/coraza-crs:caddy-alpine
     depends_on:
       - whoami
     networks:
