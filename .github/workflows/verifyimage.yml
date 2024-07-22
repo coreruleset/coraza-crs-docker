@@ -6,7 +6,8 @@ on:
       - main
 
 env:
-  REPO: "corazawaf/coraza-crs"
+  REGISTRY: "ghcr.io"
+  REPO: "coreruleset/coraza-crs"
 
 jobs:
   prepare:
@@ -57,7 +58,7 @@ jobs:
       - name: Run ${{ matrix.target }}
         run: |
           echo "Starting container ${{ matrix.target }}"
-          docker run --pull "never" -d --name ${{ matrix.target }}-test "${REPO}:${{ matrix.target }}"
+          docker run --pull "never" -d --name ${{ matrix.target }}-test "${{ env.REGISTRY }}/${{ env.REPO }}:${{ matrix.target }}"
           docker logs ${{ matrix.target }}-test
 
       - name: Verify ${{ matrix.target }}
