@@ -132,6 +132,7 @@ To build a specific target for a single platform only (replace target and platfo
 
 ```bash
 docker buildx bake -f docker-bake.hcl --set "*.platform=linux/amd64" caddy-alpine
+```
 
 ## Advanced Configuration
 
@@ -153,7 +154,7 @@ To add CRS Plugins, download and decompress the plugin to a directory of your ch
 Create a volume or bind mount a directory of your choice to `/opt/coraza/plugins`; the rules will then be loaded on server start automatically.
 
 Example:
-```
+```bash
 curl -sSL https://github.com/coreruleset/wordpress-rule-exclusions-plugin/archive/refs/tags/v1.0.0.tar.gz -o wordpress.tar.gz
 tar xvf wordpress.tar.gz --strip-components 1 'wordpress-rule-exclusions-plugin*/plugins'
 ❯ docker compose run -v $(pwd)/plugins:/opt/coraza/plugins coraza-crs
@@ -180,7 +181,7 @@ Generating configuration files...
 
 If you prefer to use your own configuration file for Caddy, simply mount the configuration file as `/config/caddy/Caddyfile` or mount a volume at `/config/Caddy` with a `Caddyfile` inside. You will need to add the relevant Coraza configuration to Caddy yourself if you choose this option. The bare minimum recommended configuration is:
 
-```bash
+```Caddyfile
 # Ensure Coraza WAF runs first - this must be included for Coraza to be working
 {
   order coraza_waf first
