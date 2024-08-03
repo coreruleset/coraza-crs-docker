@@ -29,42 +29,39 @@ These values control Coraza.
 
 | Variable | Default | Documentation |
 | - | - | - |
-| CORAZA_ARGUMENTS_LIMIT | Default: `1000` | |
+| CORAZA_ARGUMENTS_LIMIT | Default: `1000` | An integer indicating the maximum number of arguments that can be processed before setting the `REQBODY_ERROR` variable |
 | CORAZA_AUDIT_ENGINE | Default: `"RelevantOnly"` | |
-| CORAZA_AUDIT_LOG | Default: `/dev/stdout` | |
-| CORAZA_AUDIT_LOG_FORMAT | Default: `JSON` | |
-| CORAZA_AUDIT_LOG_PARTS | Default: `'ABIJDEFHZ'` | |
-| CORAZA_AUDIT_LOG_RELEVANT_STATUS | Default: `"^(?:5\|4[0-9][0-35-9])"` | |
+| CORAZA_AUDIT_LOG | Default: `/dev/stdout` | A string indicating the path to the main audit log file or the concurrent logging index file |
+| CORAZA_AUDIT_LOG_FORMAT | Default: `JSON` | A string indicating the output format of the AuditLogs (Default: `JSON`). Accepted values: `JSON`, `Native`. See [SecAuditLogFormat]() |
+| CORAZA_AUDIT_LOG_PARTS | Default: `'ABIJDEFHZ'` | A string that defines which parts of each transaction are going to be recorded in the audit log (Default: `'ABIJDEFHZ'`). See [SecAuditLogParts]() for the accepted values. |
+| CORAZA_AUDIT_LOG_RELEVANT_STATUS | Default: `"^(?:5\|4[0-9][0-35-9])"` | A regular expression string that defines the http error codes that are relevant for audit logging (Default: `"^(?:5|4(?!04))"`). See [SecAuditLogRelevantStatus]() |
 | CORAZA_AUDIT_LOG_TYPE | Default: `Serial` | |
 | CORAZA_AUDIT_STORAGE_DIR | Default: `/var/log/coraza/audit/` | |
 | CORAZA_DATA_DIR | Default: `/tmp/coraza/data` | |
 | CORAZA_DEBUG_LOG | Default: `/dev/null` | |
-| CORAZA_DEFAULT_PHASE1_ACTION | Default: `"phase:1,pass,log,tag:'\${CORAZA_TAG}'"` | |
-| CORAZA_DEFAULT_PHASE2_ACTION | Default: `"phase:2,pass,log,tag:'\${CORAZA_TAG}'"` | |
-| CORAZA_REQ_BODY_ACCESS | Default: `"On"` | |
+| CORAZA_DEFAULT_PHASE1_ACTION | Default: `"phase:1,pass,log,tag:'\${CORAZA_TAG}'"` | String with the contents for the default action in phase 1 |
+| CORAZA_DEFAULT_PHASE2_ACTION | Default: `"phase:2,pass,log,tag:'\${CORAZA_TAG}'"` | String with the contents for the default action in phase 2 |
+| CORAZA_REQ_BODY_ACCESS | Default: `"On"` | A string value allowing ModSecurity to access request bodies. Allowed values: `On`, `Off`. See [SecRequestBodyAccess]() |
 | CORAZA_REQ_BODY_JSON_DEPTH_LIMIT | Default: `1024` | |
-| CORAZA_REQ_BODY_LIMIT | Default: `13107200` | |
-| CORAZA_REQ_BODY_LIMIT_ACTION | Default: `"Reject"` | |
+| CORAZA_REQ_BODY_LIMIT | Default: `13107200` | An integer value indicating the maximum request body size accepted for buffering. See [SecRequestBodyLimit]() |
+| CORAZA_REQ_BODY_LIMIT_ACTION | Default: `"Reject"` | A string value for the action when `SecRequestBodyLimit` is reached. Accepted values: `Reject`, `ProcessPartial`. See [SecRequestBodyLimitAction]() |
 | CORAZA_REQ_BODY_NOFILES_LIMIT | Default: `524288` | |
-| CORAZA_RESP_BODY_ACCESS | Default: `"On"` | |
-| CORAZA_RESP_BODY_LIMIT | Default: `1048576` | |
-| CORAZA_RESP_BODY_LIMIT_ACTION | Default: `"ProcessPartial"` | |
+| CORAZA_RESP_BODY_ACCESS | Default: `"On"` | A string value allowing ModSecurity to access response bodies. Allowed values: `On`, `Off`. See [SecResponseBodyAccess]() |
+| CORAZA_RESP_BODY_LIMIT | Default: `1048576` | An integer value indicating the maximum response body size accepted for buffering. |
+| CORAZA_RESP_BODY_LIMIT_ACTION | Default: `"ProcessPartial"` | A string value for the action when `SecResponseBodyLimit` is reached. Accepted values: `Reject`, `ProcessPartial`. See [SecResponseBodyLimitAction]() |
 | CORAZA_RESP_BODY_MIMETYPE | Default: `"text/plain text/html text/xml"` | |
-| CORAZA_RULE_ENGINE | Default: `On` | |
-| CORAZA_TAG | Default: `coraza` | |
-| CORAZA_TMP_DIR | Default: `/tmp/coraza` | |
-| CORAZA_TMP_SAVE_UPLOADED_FILES | Default: `"On"` | |
-| CORAZA_UPLOAD_DIR | Default: `/tmp/coraza/upload` | |
-| CORAZA_UPLOAD_KEEP_FILES | Default: `Off` | |
+| CORAZA_RULE_ENGINE | Default: `On` | A string value enabling Coraza itself. Accepted values: `On`, `Off`, `DetectionOnly`. See [SecRuleEngine]() |
+| CORAZA_TAG | Default: `coraza` | A string indicating the default tag action, which will be inherited by the rules in the same configuration context. |
+| CORAZA_TMP_DIR | Default: `/tmp/coraza` | A string indicating the path where temporary files will be created |
 
 ### CRS Specific
 
 | Variable | Default | Documentation |
 | - | - | - |
-| PARANOIA | Default: `1` | |
-| ANOMALY_INBOUND | Default: `5` | |
-| ANOMALY_OUTBOUND | Default: `4` | |
-| BLOCKING_PARANOIA | Default: `1` | |
+| PARANOIA | Default: `1` | CRS Paranoia Level setting for logging. It could be different from the BLOCKING level, allowing you to log additional information. |
+| ANOMALY_INBOUND | Default: `5` | The score used by CRS to block incoming requests. |
+| ANOMALY_OUTBOUND | Default: `4` | The score used by CRS to block outgoing requests. |
+| BLOCKING_PARANOIA | Default: `1` | CRS Paranoia Level setting used for blocking |
 
 ### Caddy Specific
 
