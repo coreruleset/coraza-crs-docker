@@ -7,7 +7,7 @@
 }
 
 # Create the HTTP listener
-:80 {
+:${PORT} {
 
   # Load Coraza configuration
   coraza_waf {
@@ -50,5 +50,10 @@
   reverse_proxy ${BACKEND} {
     trusted_proxies private_ranges
   }
+
+  log {
+		output file ${ACCESSLOG}
+	}
+
 
 }

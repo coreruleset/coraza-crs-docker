@@ -27,19 +27,58 @@ The following env variables may be set to control Caddy and Coraza.
 
 These values control Coraza.
 
-| Variable                      | Default         | Documentation                                                                                                       |
-| ----------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `CORAZA_SECRULEENGINE`        | `DetectionOnly` | [SecRuleEngine](https://github.com/SpiderLabs/ModSecurity/wiki/Reference-Manual-(v2.x)#SecRuleEngine)               |
-| `CORAZA_SECREQUESTBODYACCESS` | `On`            | [SecRequestBodyAccess](https://github.com/SpiderLabs/ModSecurity/wiki/Reference-Manual-(v2.x)#SecRequestBodyAccess) |
-| `CORAZA_REMOVERULEIDS`        | ``              | [SecRuleRemoveById](https://github.com/SpiderLabs/ModSecurity/wiki/Reference-Manual-(v2.x)#secruleremovebyid)       |
+| Variable | Default | Documentation |
+| - | - | - |
+| CORAZA_ARGUMENTS_LIMIT | Default: `1000` | |
+| CORAZA_AUDIT_ENGINE | Default: `"RelevantOnly"` | |
+| CORAZA_AUDIT_LOG | Default: `/dev/stdout` | |
+| CORAZA_AUDIT_LOG_FORMAT | Default: `JSON` | |
+| CORAZA_AUDIT_LOG_PARTS | Default: `'ABIJDEFHZ'` | |
+| CORAZA_AUDIT_LOG_RELEVANT_STATUS | Default: `"^(?:5\|4[0-9][0-35-9])"` | |
+| CORAZA_AUDIT_LOG_TYPE | Default: `Serial` | |
+| CORAZA_AUDIT_STORAGE_DIR | Default: `/var/log/coraza/audit/` | |
+| CORAZA_DATA_DIR | Default: `/tmp/coraza/data` | |
+| CORAZA_DEBUG_LOG | Default: `/dev/null` | |
+| CORAZA_DEFAULT_PHASE1_ACTION | Default: `"phase:1,pass,log,tag:'\${CORAZA_TAG}'"` | |
+| CORAZA_DEFAULT_PHASE2_ACTION | Default: `"phase:2,pass,log,tag:'\${CORAZA_TAG}'"` | |
+| CORAZA_REQ_BODY_ACCESS | Default: `"On"` | |
+| CORAZA_REQ_BODY_JSON_DEPTH_LIMIT | Default: `1024` | |
+| CORAZA_REQ_BODY_LIMIT | Default: `13107200` | |
+| CORAZA_REQ_BODY_LIMIT_ACTION | Default: `"Reject"` | |
+| CORAZA_REQ_BODY_NOFILES_LIMIT | Default: `524288` | |
+| CORAZA_RESP_BODY_ACCESS | Default: `"On"` | |
+| CORAZA_RESP_BODY_LIMIT | Default: `1048576` | |
+| CORAZA_RESP_BODY_LIMIT_ACTION | Default: `"ProcessPartial"` | |
+| CORAZA_RESP_BODY_MIMETYPE | Default: `"text/plain text/html text/xml"` | |
+| CORAZA_RULE_ENGINE | Default: `On` | |
+| CORAZA_TAG | Default: `coraza` | |
+| CORAZA_TMP_DIR | Default: `/tmp/coraza` | |
+| CORAZA_TMP_SAVE_UPLOADED_FILES | Default: `"On"` | |
+| CORAZA_UPLOAD_DIR | Default: `/tmp/coraza/upload` | |
+| CORAZA_UPLOAD_KEEP_FILES | Default: `Off` | |
+
+### CRS Specific
+
+| Variable | Default | Documentation |
+| - | - | - |
+| PARANOIA | Default: `1` | |
+| ANOMALY_INBOUND | Default: `5` | |
+| ANOMALY_OUTBOUND | Default: `4` | |
+| BLOCKING_PARANOIA | Default: `1` | |
 
 ### Caddy Specific
 
 These values control Caddy.
 
+| Variable | Default | Documentation |
+| - | - | - |
+| ACCESSLOG | Default: `stderr` | Log to this file access logs. Use `/var/log/caddy/access.log` or similar if you want to store it in the filesystem |
+| BACKEND | Default: `localhost:80` | Proxy traffic to this `host:port` |
+| PORT | Default: `8080` | Port where the server listens. |
+
 ## Important Notes
 
-- The container is configured by default to run as a non-root user. The upstream Caddy containers run using root by default. To allow binding on ports <1024 `cap_net_bind_service` is added on the Caddy binary.
+- The container is configured by default to run as a non-root user. The upstream Caddy containers run using root by default. To allow binding on ports <1024 `cap_net_bind_service` is added on the Caddy binary. The default port still is 8080.
 
 ## Configuration Files/Directories
 
@@ -60,8 +99,8 @@ Various arguments can be provided if building the container yourself. The availa
 
 | Variable           | Default      | Description                                                                                                                                                  |
 | ------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `CADDY_VERSION`    | `2.7.6`      | The Caddy Docker container tag to use as a base.                                                                                                             |
-| `CRS_VERSION`      | `v4.3.0`     | The OWASP CRS release.                                                                                                                                       |
+| `CADDY_VERSION`    | `2.8.1`      | The Caddy Docker container tag to use as a base.                                                                                                             |
+| `CRS_VERSION`      | `v4.5.0`     | The OWASP CRS release.                                                                                                                                       |
 | `LIBCAP`           | `true`       | Install libcap and add the `cap_net_bind_service` capability to the Caddy binary. Required for the container to bind to low ports when not running as root.  |
 | `CADDY_USER`       | `caddy`      | The user name that will run Caddy. Can be set to `root` to run Caddy as root rather than a low privleged user.                                               |
 | `CADDY_GROUP`      | `caddy`      | The group name for the Caddy user. Can be set to `root` to run Caddy as root rather than a low privleged user.                                               |
@@ -97,10 +136,6 @@ To build a specific target for a single platform only (replace target and platfo
 ```bash
 docker buildx bake -f docker-bake.hcl --set "*.platform=linux/amd64" caddy-alpine
 
-## Adding CRS Plugins
-
-To add CRS Plugins, download and decompress the plugin to a directory of your choice. Then start the container bind mounting the directory to `/opt/coraza/owasp-crs/plugins`.
-
 ## Advanced Configuration
 
 If you prefer to configure Caddy and/or Coraza yourself there are multiple options.
@@ -113,6 +148,36 @@ To add Coraza configuration without overwriting any of the container default con
 - `/opt/coraza/rules.d`
 
 As an example, you may want to create your own rules for Coraza. You would create a volume and mount it in the container at `/opt/coraza/rules.d`; the rules will then be loaded on server start automatically.
+
+## Adding CRS Plugins
+
+To add CRS Plugins, download and decompress the plugin to a directory of your choice. The official plugin list is at https://github.com/coreruleset/plugin-registry.
+
+Create a volume or bind mount a directory of your choice to `/opt/coraza/plugins`; the rules will then be loaded on server start automatically.
+
+Example:
+```
+curl -sSL https://github.com/coreruleset/wordpress-rule-exclusions-plugin/archive/refs/tags/v1.0.0.tar.gz -o wordpress.tar.gz
+tar xvf wordpress.tar.gz --strip-components 1 'wordpress-rule-exclusions-plugin*/plugins'
+❯ docker compose run -v $(pwd)/plugins:/opt/coraza/plugins coraza-crs
+[+] Creating 1/0
+ ✔ Container coraza-crs-docker-whoami-1  Running                                                                                        0.0s
+Generating configuration files...
+  - Caddyfile
+    - Generating Caddyfile from template /templates/Caddyfile
+    - Done
+  - Coraza configuration file
+    - Generating Caddyfile from template /templates/coraza.conf
+    - Done
+  - User configuration files loaded from /opt/coraza/config.d
+    - Done
+  - Loading user plugins from /opt/coraza/plugins
+    -> wordpress-rule-exclusions-before.conf
+    -> wordpress-rule-exclusions-config.conf
+    - Done
+  - Loading user defined rule sets from /opt/coraza/rules.d
+    - Done
+```
 
 ### Replacement Configuration - Caddy
 
@@ -133,10 +198,15 @@ If you prefer to use your own configuration file for Caddy, simply mount the con
     include /opt/coraza/config/coraza.conf
     # User defined configuration files
     include /opt/coraza/config.d/*.conf
-    # OWASP Core Rule Set (CRS) Setup
+    # OWASP CRS Setup
     include /opt/coraza/config/crs-setup.conf
-    # OWASP Core Rule Set (CRS)
+    # OWASP CRS Plugins Setup
+    include /opt/coraza/owasp-crs/plugins/*-config.conf
+    include /opt/coraza/owasp-crs/plugins/*-before.conf
+    # OWASP CRS
     include /opt/coraza/owasp-crs/*.conf
+    # OWASP CRS Plugins After
+    include /opt/coraza/owasp-crs/plugins/*-after.conf
     # Other baked in rule sets
     include /opt/coraza/rules/*.conf
     # User defined rule sets
