@@ -31,6 +31,40 @@ else
   echo "    - Done"
 fi
 
+# Output the extra configuration files that will be read as hints to the user
+if [ -z "$(ls -A /opt/coraza/config.d)" ]; then
+  echo "  - No user configuration files found in /opt/coraza/config.d"
+else
+  echo "  - User configuration files loaded from /opt/coraza/config.d"
+  for f in /opt/coraza/config.d/*.conf
+  do
+    echo "    -> $(basename $f)"
+  done
+  echo "    - Done"
+fi
+
+if [ -z "$(ls -A /opt/coraza/plugins)" ]; then
+  echo "  - No user plugins found in /opt/coraza/plugins"
+else
+  echo "  - User plugins loaded from /opt/coraza/plugins"
+  for f in /opt/coraza/plugins/*.conf
+  do
+    echo "    -> $(basename $f)"
+  done
+  echo "    - Done"
+fi
+
+if [ -z "$(ls -A /opt/coraza/rules.d)" ]; then
+  echo "  - No user defined rule sets found in /opt/coraza/rules.d"
+else
+  echo "  - User defined rule sets loaded from /opt/coraza/rules.d"
+  for f in /opt/coraza/rules.d/*.conf
+  do
+    echo "    -> $(basename $f)"
+  done
+  echo "    - Done"
+fi
+
 # Launch Caddy
 echo "Launching $*"
 exec "$@"

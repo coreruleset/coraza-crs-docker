@@ -7,7 +7,7 @@
 }
 
 # Create the HTTP listener
-:80 {
+:${PORT} {
 
   # Load Coraza configuration
   coraza_waf {
@@ -24,10 +24,17 @@
     include /opt/coraza/owasp-crs/plugins/*-config.conf
     include /opt/coraza/owasp-crs/plugins/*-before.conf
 
+    # User plugins Setup
+    include /opt/coraza/plugins/*-config.conf
+    include /opt/coraza/plugins/*-before.conf
+
     # OWASP Core Rule Set (CRS)
     include /opt/coraza/owasp-crs/rules/*.conf
 
     include /opt/coraza/owasp-crs/plugins/*-after.conf
+
+    # User plugins after
+    include /opt/coraza/plugins/*-after.conf
 
     # Other baked in rule sets or configurations
     include /opt/coraza/rules/*.conf
@@ -43,5 +50,10 @@
   reverse_proxy ${BACKEND} {
     trusted_proxies private_ranges
   }
+
+  log {
+		output file ${ACCESSLOG}
+	}
+
 
 }

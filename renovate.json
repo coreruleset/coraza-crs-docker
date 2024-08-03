@@ -1,48 +1,11 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "",
+    "local>coreruleset/renovate-config",
     "schedule:weekly"
   ],
   "enabledManagers": [
     "custom.regex"
-  ],
-  "packageRules": [
-    {
-      "groupName": "all non-major dependencies",
-      "groupSlug": "all-minor-patch",
-      "matchPackagePatterns": [
-        "*"
-      ],
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
-      "prBodyColumns": [
-        "Package",
-        "Type",
-        "Update",
-        "Change",
-        "Pending"
-      ]
-    },
-    {
-      "groupName": "all major dependencies",
-      "groupSlug": "all-major",
-      "matchPackagePatterns": [
-        "*"
-      ],
-      "matchUpdateTypes": [
-        "major"
-      ],
-      "prBodyColumns": [
-        "Package",
-        "Type",
-        "Update",
-        "Change",
-        "Pending"
-      ]
-    }
   ],
   "customManagers": [
     {
