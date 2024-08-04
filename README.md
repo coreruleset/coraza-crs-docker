@@ -38,7 +38,8 @@ These values control Coraza.
 | CORAZA_AUDIT_LOG_TYPE | Default: `Serial` | |
 | CORAZA_AUDIT_STORAGE_DIR | Default: `/var/log/coraza/audit/` | |
 | CORAZA_DATA_DIR | Default: `/tmp/coraza/data` | |
-| CORAZA_DEBUG_LOG | Default: `/dev/null` | |
+| CORAZA_DEBUG_LOG | Default: `/dev/null` | A string indicating the debug log file. |
+| CORAZA_DEBUG_LOGLEVEL | Default: `1` | An integer between 1..9 defining How much debug information to log. |
 | CORAZA_DEFAULT_PHASE1_ACTION | Default: `"phase:1,pass,log,tag:'\${CORAZA_TAG}'"` | String with the contents for the default action in phase 1 |
 | CORAZA_DEFAULT_PHASE2_ACTION | Default: `"phase:2,pass,log,tag:'\${CORAZA_TAG}'"` | String with the contents for the default action in phase 2 |
 | CORAZA_REQ_BODY_ACCESS | Default: `"On"` | A string value allowing ModSecurity to access request bodies. Allowed values: `On`, `Off`. See [SecRequestBodyAccess]() |

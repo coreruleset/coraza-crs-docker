@@ -153,6 +153,7 @@ ENV \
     CORAZA_AUDIT_STORAGE_DIR=/var/log/coraza/audit/ \
     CORAZA_DATA_DIR=/tmp/coraza/data \
     CORAZA_DEBUG_LOG=/dev/null \
+    CORAZA_DEBUG_LOGLEVEL=1 \
     CORAZA_DEFAULT_PHASE1_ACTION="phase:1,pass,log,tag:'\${CORAZA_TAG}'" \
     CORAZA_DEFAULT_PHASE2_ACTION="phase:2,pass,log,tag:'\${CORAZA_TAG}'" \
     CORAZA_REQ_BODY_ACCESS="On" \
