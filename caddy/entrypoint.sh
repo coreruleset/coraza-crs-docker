@@ -65,6 +65,9 @@ else
   echo "    - Done"
 fi
 
+# Activating CRS rules
+. /opt/coraza/activate-rules.sh
+
 # Launch Caddy
 echo "Launching $*"
 exec "$@"
