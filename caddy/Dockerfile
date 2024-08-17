@@ -83,6 +83,9 @@ COPY --from=builder-caddy /usr/bin/caddy /usr/bin/caddy
 # Copy out Coraza configuration files and rules from builder-caddy
 COPY --from=builder-crs /opt/coraza /opt/coraza
 
+# Copy rules activation script
+COPY src/bin/activate-rules.sh /opt/coraza/activate-rules.sh
+
 # Add user to run Caddy so it is not running as root
 # This should only be done if the Caddy user/group is not set to root
 # hadolint ignore=DL3018,SC1075
