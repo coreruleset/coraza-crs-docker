@@ -128,8 +128,8 @@ RUN set -eux; \
     echo "Skipping libcap installation and cap_net_bind_service capability for Caddy"; \
   fi
 
-# USe envsubst instead of esh
-RUN apk add --no-cache envsubst
+# Use envsubst instead of esh
+RUN apk add --no-cache envsubst sed
 
 # Add configuration templates
 COPY src/templates /templates
