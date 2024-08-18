@@ -1,8 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "local>coreruleset/renovate-config",
-    "schedule:weekly"
+    "local>coreruleset/renovate-config"
   ],
   "enabledManagers": [
     "custom.regex"
