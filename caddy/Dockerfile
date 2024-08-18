@@ -129,7 +129,7 @@ RUN set -eux; \
   fi
 
 # Use envsubst instead of esh
-RUN apk add --no-cache envsubst gsed
+RUN apk add --no-cache envsubst sed
 
 # Add configuration templates
 COPY src/templates /templates
