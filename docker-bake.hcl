@@ -1,7 +1,7 @@
 # docker-bake.hcl
 variable "crs-version" {
     # renovate: depName=coreruleset/coreruleset datasource=github-releases
-    default = "4.6.0"
+    default = "4.7.0"
 }
 
 variable "caddy-version" {
