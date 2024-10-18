@@ -142,19 +142,17 @@ USER "${CADDY_USER}:${CADDY_GROUP}"
 
 # Set env variables for config/data directories
 ENV \
-    XDG_CONFIG_HOME="$CADDY_CONFIG_DIR" \
-    XDG_DATA_HOME="$CADDY_DATA_DIR" \
     ACCESSLOG=/var/log/caddy/access.log \
     BACKEND=localhost:80 \
     CORAZA_ARGUMENTS_LIMIT=1000 \
     CORAZA_AUDIT_ENGINE="RelevantOnly" \
-    CORAZA_AUDIT_LOG=/dev/stdout \
+    CORAZA_AUDIT_LOG='/dev/stdout' \
     CORAZA_AUDIT_LOG_FORMAT=JSON \
     CORAZA_AUDIT_LOG_PARTS='ABIJDEFHZ' \
     CORAZA_AUDIT_LOG_RELEVANT_STATUS="^(?:5|4[0-9][0-35-9])" \
-    CORAZA_AUDIT_LOG_TYPE=Serial \
-    CORAZA_AUDIT_STORAGE_DIR=/var/log/coraza/audit/ \
-    CORAZA_DATA_DIR=/tmp/coraza/data \
+    CORAZA_AUDIT_LOG_TYPE='Serial' \
+    CORAZA_AUDIT_STORAGE_DIR='/var/log/coraza/audit/' \
+    CORAZA_DATA_DIR='/tmp/coraza/data' \
     CORAZA_DEBUG_LOG=/dev/null \
     CORAZA_DEBUG_LOGLEVEL=1 \
     CORAZA_DEFAULT_PHASE1_ACTION="phase:1,pass,log,tag:'\${CORAZA_TAG}'" \
@@ -174,7 +172,10 @@ ENV \
     CORAZA_TMP_SAVE_UPLOADED_FILES="on" \
     CORAZA_UPLOAD_DIR=/tmp/coraza/upload \
     CORAZA_UPLOAD_FILE_MODE=0600 \
+    CORAZA_UPLOAD_KEEP_FILES="Off" \
     PORT=8080 \
+    XDG_CONFIG_HOME="${CADDY_CONFIG_DIR}" \
+    XDG_DATA_HOME="${CADDY_DATA_DIR}" \
     # CRS specific variables
     PARANOIA=1 \
     ANOMALY_INBOUND=5 \
