@@ -11,7 +11,7 @@ variable "caddy-version" {
 
 variable "coraza-version" {
     # renovate: depName=corazawaf/coraza-caddy datasource=github-releases
-    default = "v2.0.0-rc.3"
+    default = "v2.1.0"
 }
 
 
