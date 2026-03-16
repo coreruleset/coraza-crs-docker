@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 env:
   REGISTRY: "ghcr.io"
   REPO: "coreruleset/coraza-crs"
@@ -16,10 +19,10 @@ jobs:
       targets: ${{ steps.generate.outputs.targets }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: List targets
         id: generate
-        uses: docker/bake-action/subaction/list-targets@v4
+        uses: docker/bake-action/subaction/list-targets@aefd381cbaa93c62a1e8b02194ae420cc36269d2 # v4
 
   build:
     runs-on: ubuntu-latest
@@ -30,22 +33,22 @@ jobs:
         target: ${{ fromJson(needs.prepare.outputs.targets) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 1
 
       # https://github.com/docker/setup-qemu-action
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
 
       # https://github.com/docker/setup-buildx-action
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
         with:
           driver-opts: image=moby/buildkit:master
 
       - name: Build images
-        uses: docker/bake-action@v4.1.0
+        uses: docker/bake-action@849707117b03d39aba7924c50a10376a69e88d7d # v4.1.0
         with:
           files: |
             ./docker-bake.hcl
