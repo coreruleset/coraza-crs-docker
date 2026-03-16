@@ -4,17 +4,21 @@ on:
   release:
     types: [published]
 
+permissions: {}
+
 jobs:
   prepare:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       targets: ${{ steps.generate.outputs.targets }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: List targets
         id: generate
-        uses: docker/bake-action/subaction/list-targets@v4
+        uses: docker/bake-action/subaction/list-targets@aefd381cbaa93c62a1e8b02194ae420cc36269d2 # v4
 
   build:
     name: Build ${{ matrix.target }}
@@ -30,20 +34,20 @@ jobs:
         target: ${{ fromJson(needs.prepare.outputs.targets) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 1
-      
+
       - name: Install Cosign
-        uses: sigstore/cosign-installer@v3.4.0
+        uses: sigstore/cosign-installer@e1523de7571e31dbe865fd2e80c5c7c23ae71eb4 # v3.4.0
 
       # https://github.com/docker/setup-qemu-action
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
 
       # https://github.com/docker/setup-buildx-action
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3.3.0
+        uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
         with:
           driver-opts: image=moby/buildkit:master
 
@@ -62,7 +66,7 @@ jobs:
 
       - name: 'Build and push to Docker Hub: ${{ matrix.target }}'
         id: build-and-push
-        uses: docker/bake-action@v4.1.0
+        uses: docker/bake-action@849707117b03d39aba7924c50a10376a69e88d7d # v4.1.0
         with:
           files: |
             ./docker-bake.hcl
@@ -82,4 +86,3 @@ jobs:
             images+="${tag}@${DIGEST} "
           done
           cosign sign --yes ${images}
-
