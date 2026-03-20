@@ -14,6 +14,10 @@ variable "coraza-version" {
     default = "v2.2.0"
 }
 
+variable "ubuntu-version" {
+    default = "24.04"
+}
+
 
 variable "REPOS" {
     # List of repositories to tag
@@ -55,6 +59,8 @@ function "vtag" {
 group "default" {
     targets = [
         "caddy-alpine",
+        "nginx-ubuntu",
+        "apache-ubuntu",
     ]
 }
 
@@ -80,5 +86,35 @@ target "caddy-alpine" {
     dockerfile="caddy/Dockerfile"
     tags = concat(tag("caddy-alpine"),
         vtag("${crs-version}", "caddy-alpine")
+    )
+}
+
+target "nginx-ubuntu" {
+    inherits = ["platforms-base"]
+    context="."
+    dockerfile="nginx/Dockerfile"
+    # PPA packages are only available for amd64 and arm64
+    platforms = ["linux/amd64", "linux/arm64"]
+    args = {
+        CRS_VERSION = "${crs-version}"
+        UBUNTU_VERSION = "${ubuntu-version}"
+    }
+    tags = concat(tag("nginx-ubuntu"),
+        vtag("${crs-version}", "nginx-ubuntu")
+    )
+}
+
+target "apache-ubuntu" {
+    inherits = ["platforms-base"]
+    context="."
+    dockerfile="apache/Dockerfile"
+    # PPA packages are only available for amd64 and arm64
+    platforms = ["linux/amd64", "linux/arm64"]
+    args = {
+        CRS_VERSION = "${crs-version}"
+        UBUNTU_VERSION = "${ubuntu-version}"
+    }
+    tags = concat(tag("apache-ubuntu"),
+        vtag("${crs-version}", "apache-ubuntu")
     )
 }
