@@ -6,7 +6,7 @@ Three web server variants are available:
 
 | Variant | Base | Image Tag |
 | ------- | ---- | --------- |
-| [Caddy](https://caddyserver.com/) | Alpine | `caddy-alpine` |
+| [Caddy](https://caddyserver.com/) | Alpine 3.20 | `caddy-alpine` |
 | [nginx](https://nginx.org/) | Ubuntu 24.04 | `nginx-ubuntu` |
 | [Apache](https://httpd.apache.org/) | Ubuntu 24.04 | `apache-ubuntu` |
 
