@@ -72,7 +72,7 @@ ENV \
     BACKEND=localhost:80 \
     CORAZA_ARGUMENTS_LIMIT=1000 \
     CORAZA_AUDIT_ENGINE="RelevantOnly" \
-    CORAZA_AUDIT_LOG='/var/log/coraza/audit.log' \
+    CORAZA_AUDIT_LOG='/dev/stdout' \
     CORAZA_AUDIT_LOG_FORMAT=JSON \
     CORAZA_AUDIT_LOG_PARTS='ABIJDEFHZ' \
     CORAZA_AUDIT_LOG_RELEVANT_STATUS="^(?:5|4[0-9][0-35-9])" \
