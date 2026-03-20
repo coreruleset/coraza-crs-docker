@@ -28,8 +28,8 @@ The containers act as a reverse proxy, inspecting traffic with Coraza WAF and CR
 Using docker compose:
 
 ```bash
-# Caddy (default, port 8080)
-docker compose up
+# Caddy (port 8080)
+docker compose --profile caddy up
 
 # nginx (port 8081)
 docker compose --profile nginx up
@@ -54,14 +54,14 @@ docker run -d -p 80:80 -e BACKEND=myapp:8080 ghcr.io/coreruleset/coraza-crs:apac
 docker run -d -p 8080:8080 -e BACKEND=myapp:8080 ghcr.io/coreruleset/coraza-crs:caddy-alpine
 ```
 
-Test that the WAF is working:
+Test that the WAF is working (adjust port to match the variant: 8080 for Caddy, 8081 for nginx, 8082 for Apache):
 
 ```bash
 # Normal request — should return 200
-curl http://localhost/
+curl http://localhost:8081/
 
 # SQL injection — should return 403
-curl "http://localhost/?id=1%20AND%201=1"
+curl "http://localhost:8081/?id=1%20AND%201=1"
 ```
 
 ## Env Variables

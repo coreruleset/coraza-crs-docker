@@ -1,13 +1,13 @@
 ---
 
 # Docker compose example for the Coraza WAF
-# Three profiles are available: caddy (default), nginx, and apache.
+# Use profiles to select which WAF variant(s) to run.
 #
 # Usage:
-#   docker compose up                          # starts caddy + whoami
-#   docker compose --profile nginx up          # starts nginx + whoami
-#   docker compose --profile apache up         # starts apache + whoami
-#   docker compose --profile all up            # starts all three + whoami
+#   docker compose --profile caddy up         # starts caddy + whoami
+#   docker compose --profile nginx up         # starts nginx + whoami
+#   docker compose --profile apache up        # starts apache + whoami
+#   docker compose --profile all up           # starts all three + whoami
 
 services:
 
@@ -20,6 +20,7 @@ services:
 
   ## Coraza WAF running on Caddy
   coraza-caddy:
+    profiles: ["caddy", "all"]
     image: ghcr.io/coreruleset/coraza-crs:caddy-alpine
     depends_on:
       - whoami

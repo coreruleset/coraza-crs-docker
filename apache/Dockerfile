@@ -60,14 +60,15 @@ COPY src/bin/activate-rules.sh /opt/coraza/activate-rules.sh
 COPY apache/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Create log and runtime directories (writable by apache worker)
+# Create log and runtime directories (owned by apache worker user)
 RUN set -eux; \
     mkdir -p /var/log/coraza /var/log/coraza/audit \
              /tmp/coraza /tmp/coraza/data /tmp/coraza/upload; \
     touch /var/log/coraza/audit.log; \
-    chmod 777 /var/log/coraza /var/log/coraza/audit \
+    chown -R www-data:www-data /var/log/coraza /tmp/coraza; \
+    chmod 750 /var/log/coraza /var/log/coraza/audit \
               /tmp/coraza /tmp/coraza/data /tmp/coraza/upload; \
-    chmod 666 /var/log/coraza/audit.log
+    chmod 640 /var/log/coraza/audit.log
 
 # Set working directory to CRS rules for relative @pmFromFile paths
 WORKDIR /opt/coraza/owasp-crs/rules
