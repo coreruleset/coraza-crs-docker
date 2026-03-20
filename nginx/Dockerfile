@@ -29,16 +29,20 @@ RUN set -eux; \
 # Runtime stage
 FROM ubuntu:${UBUNTU_VERSION}
 
+# Add PPA signing key and repositories
+COPY src/keys/pierrepomes-ppa.gpg /usr/share/keyrings/pierrepomes-ppa.gpg
+
 RUN set -eux; \
     apt-get update -qq; \
-    apt-get install -qq --no-install-recommends \
-      software-properties-common gettext-base; \
-    add-apt-repository -y ppa:pierrepomes/libcoraza; \
-    add-apt-repository -y ppa:pierrepomes/coraza-nginx; \
+    apt-get install -qq --no-install-recommends ca-certificates; \
+    . /etc/os-release; \
+    echo "deb [signed-by=/usr/share/keyrings/pierrepomes-ppa.gpg] https://ppa.launchpadcontent.net/pierrepomes/libcoraza/ubuntu ${VERSION_CODENAME} main" \
+      > /etc/apt/sources.list.d/pierrepomes-libcoraza.list; \
+    echo "deb [signed-by=/usr/share/keyrings/pierrepomes-ppa.gpg] https://ppa.launchpadcontent.net/pierrepomes/coraza-nginx/ubuntu ${VERSION_CODENAME} main" \
+      > /etc/apt/sources.list.d/pierrepomes-coraza-nginx.list; \
     apt-get update -qq; \
     apt-get install -qq --no-install-recommends \
-      nginx libnginx-mod-http-coraza; \
-    apt-get purge -y --auto-remove software-properties-common; \
+      gettext-base nginx libnginx-mod-http-coraza; \
     rm -rf /var/lib/apt/lists/*
 
 # Copy CRS and directory structure from builder
