@@ -33,18 +33,20 @@ else
     cp "/templates/coraza-rules.conf" "/opt/coraza/config/coraza-rules.conf"
 fi
 
-# Apache vhost configuration
-echo "  - Apache vhost configuration"
-if [ -f "/config/apache/vhost.conf" ]; then
-    echo "    - Using user-provided vhost from /config/apache/vhost.conf"
-    cp "/config/apache/vhost.conf" "/etc/apache2/sites-enabled/coraza.conf"
+# Apache extra configuration (coraza + reverse proxy)
+echo "  - Apache configuration"
+if [ -f "/config/apache/coraza.conf" ]; then
+    echo "    - Using user-provided config from /config/apache/coraza.conf"
+    cp "/config/apache/coraza.conf" "/usr/local/apache2/conf/extra/coraza.conf"
 else
     echo "    - Generating from template /templates/apache-vhost.conf"
-    envsubst "${defined_envs}" < "/templates/apache-vhost.conf" > "/etc/apache2/sites-enabled/coraza.conf"
+    envsubst "${defined_envs}" < "/templates/apache-vhost.conf" > "/usr/local/apache2/conf/extra/coraza.conf"
 fi
 
-# Set Apache listen port
-echo "Listen ${PORT}" > /etc/apache2/ports.conf
+# Ensure our config is included in httpd.conf
+if ! grep -q "Include conf/extra/coraza.conf" /usr/local/apache2/conf/httpd.conf; then
+    echo "Include conf/extra/coraza.conf" >> /usr/local/apache2/conf/httpd.conf
+fi
 
 # User config files
 if [ -z "$(ls -A /opt/coraza/config.d 2>/dev/null)" ]; then

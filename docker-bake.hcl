@@ -14,8 +14,29 @@ variable "coraza-version" {
     default = "v2.2.0"
 }
 
-variable "ubuntu-version" {
-    default = "24.04"
+variable "libcoraza-version" {
+    # renovate: depName=corazawaf/libcoraza datasource=github-releases
+    default = "v1.2.0"
+}
+
+variable "coraza-nginx-version" {
+    # renovate: depName=corazawaf/coraza-nginx datasource=github-releases
+    default = "0.10.1"
+}
+
+variable "coraza-apache-version" {
+    # renovate: depName=corazawaf/coraza-apache datasource=github-releases
+    default = "0.0.1"
+}
+
+variable "nginx-version" {
+    # renovate: depName=nginxinc/nginx-unprivileged datasource=docker
+    default = "1.28.2"
+}
+
+variable "httpd-version" {
+    # renovate: depName=httpd datasource=docker
+    default = "2.4"
 }
 
 
@@ -59,8 +80,8 @@ function "vtag" {
 group "default" {
     targets = [
         "caddy-alpine",
-        "nginx-ubuntu",
-        "apache-ubuntu",
+        "nginx",
+        "apache",
     ]
 }
 
@@ -68,7 +89,7 @@ target "docker-metadata-action" {}
 
 target "platforms-base" {
     inherits = ["docker-metadata-action"]
-    context="."    
+    context="."
     platforms = ["linux/amd64", "linux/arm/v6", "linux/arm/v7", "linux/arm64"]
     labels = {
         "org.opencontainers.image.source" = "https://github.com/coreruleset/coraza-crs-docker"
@@ -89,32 +110,34 @@ target "caddy-alpine" {
     )
 }
 
-target "nginx-ubuntu" {
+target "nginx" {
     inherits = ["platforms-base"]
     context="."
     dockerfile="nginx/Dockerfile"
-    # PPA packages are only available for amd64 and arm64
     platforms = ["linux/amd64", "linux/arm64"]
     args = {
         CRS_VERSION = "${crs-version}"
-        UBUNTU_VERSION = "${ubuntu-version}"
+        LIBCORAZA_VERSION = "${libcoraza-version}"
+        CORAZA_NGINX_VERSION = "${coraza-nginx-version}"
+        NGINX_VERSION = "${nginx-version}"
     }
-    tags = concat(tag("nginx-ubuntu"),
-        vtag("${crs-version}", "nginx-ubuntu")
+    tags = concat(tag("nginx"),
+        vtag("${crs-version}", "nginx")
     )
 }
 
-target "apache-ubuntu" {
+target "apache" {
     inherits = ["platforms-base"]
     context="."
     dockerfile="apache/Dockerfile"
-    # PPA packages are only available for amd64 and arm64
     platforms = ["linux/amd64", "linux/arm64"]
     args = {
         CRS_VERSION = "${crs-version}"
-        UBUNTU_VERSION = "${ubuntu-version}"
+        LIBCORAZA_VERSION = "${libcoraza-version}"
+        CORAZA_APACHE_VERSION = "${coraza-apache-version}"
+        HTTPD_VERSION = "${httpd-version}"
     }
-    tags = concat(tag("apache-ubuntu"),
-        vtag("${crs-version}", "apache-ubuntu")
+    tags = concat(tag("apache"),
+        vtag("${crs-version}", "apache")
     )
 }

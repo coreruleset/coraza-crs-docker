@@ -1,19 +1,84 @@
-ARG UBUNTU_VERSION="24.04"
+# syntax=docker/dockerfile:1
 
-# Build stage: download and prepare CRS
-FROM ubuntu:${UBUNTU_VERSION} AS builder-crs
+ARG NGINX_VERSION="1.28.2"
+
+## Stage 1: Build libcoraza from source
+FROM golang:1.25 AS go-builder
+
+ARG LIBCORAZA_VERSION="n/a"
+
+RUN set -eux; \
+    apt-get update -qq; \
+    apt-get install -qq --no-install-recommends \
+        autoconf \
+        automake \
+        libtool \
+        gcc \
+        make \
+        wget \
+        ca-certificates
+
+RUN set -eux; \
+    wget -q "https://github.com/corazawaf/libcoraza/archive/refs/tags/${LIBCORAZA_VERSION}.tar.gz" \
+      -O /tmp/libcoraza.tar.gz; \
+    mkdir /tmp/libcoraza; \
+    tar xzf /tmp/libcoraza.tar.gz --strip-components=1 -C /tmp/libcoraza; \
+    cd /tmp/libcoraza; \
+    ./build.sh; \
+    ./configure; \
+    make; \
+    cp libcoraza.a /usr/local/lib/; \
+    cp libcoraza.so /usr/local/lib/; \
+    mkdir -p /usr/local/include/coraza; \
+    cp coraza/coraza.h /usr/local/include/coraza/
+
+## Stage 2: Build nginx module
+FROM nginx:${NGINX_VERSION} AS nginx-builder
+
+ARG CORAZA_NGINX_VERSION="n/a"
+
+COPY --from=go-builder /usr/local/include/coraza /usr/local/include/coraza
+COPY --from=go-builder /usr/local/lib/libcoraza.a /usr/local/lib/
+COPY --from=go-builder /usr/local/lib/libcoraza.so /usr/local/lib/
+
+RUN set -eux; \
+    apt-get update -qq; \
+    apt-get install -qq --no-install-recommends \
+        gcc \
+        libc-dev \
+        make \
+        libpcre2-dev \
+        zlib1g-dev \
+        libssl-dev \
+        curl \
+        ca-certificates
+
+RUN set -eux; \
+    curl -sSL "https://github.com/corazawaf/coraza-nginx/archive/refs/tags/v${CORAZA_NGINX_VERSION}.tar.gz" \
+      -o /tmp/coraza-nginx.tar.gz; \
+    mkdir /tmp/coraza-nginx; \
+    tar xzf /tmp/coraza-nginx.tar.gz --strip-components=1 -C /tmp/coraza-nginx; \
+    curl -sSL "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" \
+      -o /tmp/nginx.tar.gz; \
+    tar xzf /tmp/nginx.tar.gz -C /tmp; \
+    cd /tmp/nginx-${NGINX_VERSION}; \
+    ./configure --with-compat --add-dynamic-module=/tmp/coraza-nginx; \
+    make modules; \
+    strip objs/*.so; \
+    cp objs/ngx_http_coraza_module.so /usr/lib/nginx/modules/
+
+## Stage 3: Download CRS
+FROM debian:bookworm-slim AS crs-release
 
 ARG CRS_VERSION="n/a"
 
 RUN set -eux; \
     apt-get update -qq; \
     apt-get install -qq --no-install-recommends ca-certificates curl; \
-    curl -fSL "https://github.com/coreruleset/coreruleset/archive/refs/tags/v${CRS_VERSION}.tar.gz" \
+    curl -sSL "https://github.com/coreruleset/coreruleset/archive/refs/tags/v${CRS_VERSION}.tar.gz" \
       -o /tmp/crs.tar.gz; \
     mkdir /var/tmp/owasp-crs; \
-    tar x -z --strip-components=1 \
-      -f /tmp/crs.tar.gz \
-      -C /var/tmp/owasp-crs; \
+    tar xzf /tmp/crs.tar.gz --strip-components=1 -C /var/tmp/owasp-crs; \
     mkdir -p \
       /opt/coraza/config \
       /opt/coraza/rules \
@@ -26,27 +91,20 @@ RUN set -eux; \
     cp -r /var/tmp/owasp-crs/plugins /opt/coraza/owasp-crs; \
     cp /var/tmp/owasp-crs/crs-setup.conf.example /opt/coraza/config/crs-setup.conf
 
-# Runtime stage
-FROM ubuntu:${UBUNTU_VERSION}
+## Stage 4: Runtime (unprivileged image)
+FROM nginxinc/nginx-unprivileged:${NGINX_VERSION}
 
-# Add PPA signing key and repositories
-COPY src/keys/pierrepomes-ppa.gpg /usr/share/keyrings/pierrepomes-ppa.gpg
+USER root
+
+COPY --from=go-builder /usr/local/lib/libcoraza.so /usr/local/lib/
+COPY --from=nginx-builder /usr/lib/nginx/modules/ngx_http_coraza_module.so /usr/lib/nginx/modules/
+COPY --from=crs-release /opt/coraza /opt/coraza
 
 RUN set -eux; \
     apt-get update -qq; \
-    apt-get install -qq --no-install-recommends ca-certificates; \
-    . /etc/os-release; \
-    echo "deb [signed-by=/usr/share/keyrings/pierrepomes-ppa.gpg] https://ppa.launchpadcontent.net/pierrepomes/libcoraza/ubuntu ${VERSION_CODENAME} main" \
-      > /etc/apt/sources.list.d/pierrepomes-libcoraza.list; \
-    echo "deb [signed-by=/usr/share/keyrings/pierrepomes-ppa.gpg] https://ppa.launchpadcontent.net/pierrepomes/coraza-nginx/ubuntu ${VERSION_CODENAME} main" \
-      > /etc/apt/sources.list.d/pierrepomes-coraza-nginx.list; \
-    apt-get update -qq; \
-    apt-get install -qq --no-install-recommends \
-      gettext-base nginx libnginx-mod-http-coraza; \
-    rm -rf /var/lib/apt/lists/*
-
-# Copy CRS and directory structure from builder
-COPY --from=builder-crs /opt/coraza /opt/coraza
+    apt-get install -qq --no-install-recommends gettext-base; \
+    rm -rf /var/lib/apt/lists/*; \
+    ldconfig
 
 # Copy shared templates and scripts
 COPY src/templates/coraza.conf /templates/coraza.conf
@@ -58,15 +116,17 @@ COPY src/bin/activate-rules.sh /opt/coraza/activate-rules.sh
 COPY nginx/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Create log and runtime directories (owned by nginx worker user)
+# Create log and runtime directories (owned by nginx user)
 RUN set -eux; \
     mkdir -p /var/log/coraza /var/log/coraza/audit \
              /tmp/coraza /tmp/coraza/data /tmp/coraza/upload; \
     touch /var/log/coraza/audit.log; \
-    chown -R www-data:www-data /var/log/coraza /tmp/coraza; \
+    chown -R nginx:nginx /var/log/coraza /tmp/coraza /opt/coraza /templates; \
     chmod 750 /var/log/coraza /var/log/coraza/audit \
               /tmp/coraza /tmp/coraza/data /tmp/coraza/upload; \
     chmod 640 /var/log/coraza/audit.log
+
+USER nginx
 
 ENV \
     BACKEND=localhost:80 \
@@ -100,7 +160,7 @@ ENV \
     CORAZA_UPLOAD_FILE_MODE=0600 \
     CORAZA_UPLOAD_KEEP_FILES="Off" \
     NGINX_LOGLEVEL=warn \
-    PORT=80 \
+    PORT=8080 \
     PARANOIA=1 \
     ANOMALY_INBOUND=5 \
     ANOMALY_OUTBOUND=4 \

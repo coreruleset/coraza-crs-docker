@@ -40,12 +40,15 @@ services:
       dockerfile: nginx/Dockerfile
       args:
         CRS_VERSION: "4.24.1"
+        LIBCORAZA_VERSION: "v1.2.0"
+        CORAZA_NGINX_VERSION: "0.10.1"
+        NGINX_VERSION: "1.28.2"
     depends_on:
       - whoami
     networks:
       - waf
     ports:
-      - "8081:80"
+      - "8081:8080"
     environment:
       - BACKEND=whoami:80
       - CORAZA_RULE_ENGINE=On
@@ -58,6 +61,9 @@ services:
       dockerfile: apache/Dockerfile
       args:
         CRS_VERSION: "4.24.1"
+        LIBCORAZA_VERSION: "v1.2.0"
+        CORAZA_APACHE_VERSION: "0.0.1"
+        HTTPD_VERSION: "2.4"
     depends_on:
       - whoami
     networks:

@@ -7,8 +7,8 @@ Three web server variants are available:
 | Variant | Base | Image Tag |
 | ------- | ---- | --------- |
 | [Caddy](https://caddyserver.com/) | Alpine 3.20 | `caddy-alpine` |
-| [nginx](https://nginx.org/) | Ubuntu 24.04 | `nginx-ubuntu` |
-| [Apache](https://httpd.apache.org/) | Ubuntu 24.04 | `apache-ubuntu` |
+| [nginx](https://nginx.org/) | Debian (nginx-unprivileged) | `nginx` |
+| [Apache](https://httpd.apache.org/) | Debian (httpd) | `apache` |
 
 The containers act as a reverse proxy, inspecting traffic with Coraza WAF and CRS before forwarding to a backend service.
 
@@ -44,11 +44,11 @@ docker compose --profile all up
 Or run directly:
 
 ```bash
-# nginx
-docker run -d -p 80:80 -e BACKEND=myapp:8080 ghcr.io/coreruleset/coraza-crs:nginx-ubuntu
+# nginx (non-root, listens on 8080)
+docker run -d -p 8080:8080 -e BACKEND=myapp:8080 ghcr.io/coreruleset/coraza-crs:nginx
 
 # Apache
-docker run -d -p 80:80 -e BACKEND=myapp:8080 ghcr.io/coreruleset/coraza-crs:apache-ubuntu
+docker run -d -p 80:80 -e BACKEND=myapp:8080 ghcr.io/coreruleset/coraza-crs:apache
 
 # Caddy
 docker run -d -p 8080:8080 -e BACKEND=myapp:8080 ghcr.io/coreruleset/coraza-crs:caddy-alpine
@@ -118,7 +118,7 @@ curl "http://localhost:8081/?id=1%20AND%201=1"
 | Variable | Default | Description |
 | - | - | - |
 | BACKEND | `localhost:80` | Backend `host:port` to proxy to |
-| PORT | `80` | Listen port |
+| PORT | `8080` | Listen port |
 | NGINX_LOGLEVEL | `warn` | nginx error log level |
 
 #### Apache
@@ -131,7 +131,7 @@ curl "http://localhost:8081/?id=1%20AND%201=1"
 ## Important Notes
 
 - **Caddy** runs as a non-root user by default. The `cap_net_bind_service` capability is added to allow binding on ports < 1024. Default port is 8080.
-- **nginx and Apache** use Ubuntu 24.04 with packages from [PPA](https://launchpad.net/~pierrepomes). Platforms: `linux/amd64` and `linux/arm64`.
+- **nginx** uses `nginxinc/nginx-unprivileged` (Debian-based, non-root). **Apache** uses `httpd` (Debian-based). Both build libcoraza and connector modules from source. Platforms: `linux/amd64` and `linux/arm64`.
 - The audit log defaults to `/dev/stdout` (visible via `docker logs`).
 
 ## Configuration Files/Directories
@@ -156,8 +156,12 @@ The following configuration paths are shared across all variants:
 | Variable | Default | Description |
 | -------- | ------- | ----------- |
 | `CRS_VERSION` | `4.24.1` | OWASP CRS release version |
-| `CADDY_VERSION` | `2.8.4` | Caddy Docker tag (caddy variant) |
-| `UBUNTU_VERSION` | `24.04` | Ubuntu base image (nginx/apache variants) |
+| `CADDY_VERSION` | `2.11.2` | Caddy Docker tag (caddy variant) |
+| `NGINX_VERSION` | `1.28.2` | nginx image version (nginx variant) |
+| `HTTPD_VERSION` | `2.4` | httpd image version (apache variant) |
+| `LIBCORAZA_VERSION` | `v1.2.0` | libcoraza release (nginx/apache variants) |
+| `CORAZA_NGINX_VERSION` | `0.10.1` | coraza-nginx release (nginx variant) |
+| `CORAZA_APACHE_VERSION` | `0.0.1` | coraza-apache release (apache variant) |
 
 ## Building
 
@@ -172,7 +176,7 @@ docker buildx create --use --platform linux/amd64,linux/arm64
 docker buildx bake -f docker-bake.hcl
 
 # Build a single target
-docker buildx bake -f docker-bake.hcl --set "*.platform=linux/amd64" nginx-ubuntu
+docker buildx bake -f docker-bake.hcl --set "*.platform=linux/amd64" nginx
 ```
 
 ## Advanced Configuration
@@ -191,7 +195,7 @@ Download and mount plugins to `/opt/coraza/plugins`:
 ```bash
 curl -sSL https://github.com/coreruleset/wordpress-rule-exclusions-plugin/archive/refs/tags/v1.0.0.tar.gz -o wordpress.tar.gz
 tar xvf wordpress.tar.gz --strip-components 1 'wordpress-rule-exclusions-plugin*/plugins'
-docker run -v $(pwd)/plugins:/opt/coraza/plugins ghcr.io/coreruleset/coraza-crs:nginx-ubuntu
+docker run -v $(pwd)/plugins:/opt/coraza/plugins ghcr.io/coreruleset/coraza-crs:nginx
 ```
 
 ### Replacement Configuration
@@ -200,6 +204,6 @@ To use your own web server configuration, mount it at:
 
 - **Caddy**: `/config/caddy/Caddyfile`
 - **nginx**: `/config/nginx/nginx.conf`
-- **Apache**: `/config/apache/vhost.conf`
+- **Apache**: `/config/apache/coraza.conf`
 
 To replace the Coraza configuration entirely, mount at `/config/coraza/coraza.conf`.

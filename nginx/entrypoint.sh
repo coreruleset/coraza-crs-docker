@@ -1,13 +1,11 @@
 #!/bin/sh
 set -e
 
-# Create Coraza runtime directories (writable by web server worker)
+# Create Coraza runtime directories
 mkdir -p "${CORAZA_TMP_DIR:-/tmp/coraza}" \
          "${CORAZA_DATA_DIR:-/tmp/coraza/data}" \
          "${CORAZA_UPLOAD_DIR:-/tmp/coraza/upload}" \
          "${CORAZA_AUDIT_STORAGE_DIR:-/var/log/coraza/audit}"
-chown -R www-data:www-data "${CORAZA_TMP_DIR:-/tmp/coraza}" \
-                           "${CORAZA_AUDIT_STORAGE_DIR:-/var/log/coraza/audit}"
 
 echo "Generating configuration files..."
 
