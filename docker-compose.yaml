@@ -1,11 +1,13 @@
 ---
 
-# Docker compose for example for the Coraza WAF
-# This example assumes Docker is running in swarm mode
-# Traefik will be used as the front end server accepting inbound connections and terminating SSL.
-# The Coraza WAF will be used to protect the backend "whoami" service.
-
-version: '3.8'
+# Docker compose example for the Coraza WAF
+# Use profiles to select which WAF variant(s) to run.
+#
+# Usage:
+#   docker compose --profile caddy up         # starts caddy + whoami
+#   docker compose --profile nginx up         # starts nginx + whoami
+#   docker compose --profile apache up        # starts apache + whoami
+#   docker compose --profile all up           # starts all three + whoami
 
 services:
 
@@ -14,23 +16,66 @@ services:
   whoami:
     image: traefik/whoami
     networks:
-      - whoami
+      - waf
 
   ## Coraza WAF running on Caddy
-  coraza-crs:
+  coraza-caddy:
+    profiles: ["caddy", "all"]
     image: ghcr.io/coreruleset/coraza-crs:caddy-alpine
     depends_on:
       - whoami
     networks:
-      - whoami
+      - waf
     ports:
-      - "80:80"
-      - "443:443"
+      - "8080:8080"
     environment:
       - BACKEND=whoami:80
-      - CORAZA_SECRULEENGINE=On
+      - CORAZA_RULE_ENGINE=On
+
+  ## Coraza WAF running on nginx
+  coraza-nginx:
+    profiles: ["nginx", "all"]
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+      args:
+        CRS_VERSION: "4.24.1"
+        GOLANG_VERSION: "1.25"
+        LIBCORAZA_VERSION: "v1.2.0"
+        CORAZA_NGINX_VERSION: "0.10.1"
+        NGINX_VERSION: "1.28.2"
+    depends_on:
+      - whoami
+    networks:
+      - waf
+    ports:
+      - "8081:8080"
+    environment:
+      - BACKEND=whoami:80
+      - CORAZA_RULE_ENGINE=On
+
+  ## Coraza WAF running on Apache
+  coraza-apache:
+    profiles: ["apache", "all"]
+    build:
+      context: .
+      dockerfile: apache/Dockerfile
+      args:
+        CRS_VERSION: "4.24.1"
+        GOLANG_VERSION: "1.25"
+        LIBCORAZA_VERSION: "v1.2.0"
+        CORAZA_APACHE_VERSION: "0.0.1"
+        HTTPD_VERSION: "2.4"
+    depends_on:
+      - whoami
+    networks:
+      - waf
+    ports:
+      - "8082:8080"
+    environment:
+      - BACKEND=whoami:80
+      - CORAZA_RULE_ENGINE=On
 
 ## Networks used by the above services
 networks:
-  ## Basic network used for the containers
-  whoami:
+  waf:
