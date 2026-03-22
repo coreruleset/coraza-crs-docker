@@ -40,6 +40,7 @@ services:
       dockerfile: nginx/Dockerfile
       args:
         CRS_VERSION: "4.24.1"
+        GOLANG_VERSION: "1.25"
         LIBCORAZA_VERSION: "v1.2.0"
         CORAZA_NGINX_VERSION: "0.10.1"
         NGINX_VERSION: "1.28.2"
@@ -61,6 +62,7 @@ services:
       dockerfile: apache/Dockerfile
       args:
         CRS_VERSION: "4.24.1"
+        GOLANG_VERSION: "1.25"
         LIBCORAZA_VERSION: "v1.2.0"
         CORAZA_APACHE_VERSION: "0.0.1"
         HTTPD_VERSION: "2.4"

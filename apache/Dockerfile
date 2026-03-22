@@ -1,9 +1,10 @@
 # syntax=docker/dockerfile:1
 
 ARG HTTPD_VERSION="2.4"
+ARG GOLANG_VERSION="1.25"
 
 ## Stage 1: Build libcoraza from source
-FROM golang:1.25 AS go-builder
+FROM golang:${GOLANG_VERSION} AS go-builder
 
 ARG LIBCORAZA_VERSION="n/a"
 

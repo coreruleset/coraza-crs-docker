@@ -14,6 +14,11 @@ variable "coraza-version" {
     default = "v2.2.0"
 }
 
+variable "golang-version" {
+    # renovate: depName=golang datasource=docker
+    default = "1.25"
+}
+
 variable "libcoraza-version" {
     # renovate: depName=corazawaf/libcoraza datasource=github-releases
     default = "v1.2.0"
@@ -117,6 +122,7 @@ target "nginx" {
     platforms = ["linux/amd64", "linux/arm64"]
     args = {
         CRS_VERSION = "${crs-version}"
+        GOLANG_VERSION = "${golang-version}"
         LIBCORAZA_VERSION = "${libcoraza-version}"
         CORAZA_NGINX_VERSION = "${coraza-nginx-version}"
         NGINX_VERSION = "${nginx-version}"
@@ -133,6 +139,7 @@ target "apache" {
     platforms = ["linux/amd64", "linux/arm64"]
     args = {
         CRS_VERSION = "${crs-version}"
+        GOLANG_VERSION = "${golang-version}"
         LIBCORAZA_VERSION = "${libcoraza-version}"
         CORAZA_APACHE_VERSION = "${coraza-apache-version}"
         HTTPD_VERSION = "${httpd-version}"

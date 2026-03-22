@@ -1,9 +1,10 @@
 # syntax=docker/dockerfile:1
 
 ARG NGINX_VERSION="1.28.2"
+ARG GOLANG_VERSION="1.25"
 
 ## Stage 1: Build libcoraza from source
-FROM golang:1.25 AS go-builder
+FROM golang:${GOLANG_VERSION} AS go-builder
 
 ARG LIBCORAZA_VERSION="n/a"
 
@@ -35,7 +36,10 @@ RUN set -eux; \
 ## Stage 2: Build nginx module
 FROM nginx:${NGINX_VERSION} AS nginx-builder
 
+ARG NGINX_VERSION="n/a"
 ARG CORAZA_NGINX_VERSION="n/a"
+
+USER root
 
 COPY --from=go-builder /usr/local/include/coraza /usr/local/include/coraza
 COPY --from=go-builder /usr/local/lib/libcoraza.a /usr/local/lib/
