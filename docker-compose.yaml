@@ -69,7 +69,7 @@ services:
     networks:
       - waf
     ports:
-      - "8082:80"
+      - "8082:8080"
     environment:
       - BACKEND=whoami:80
       - CORAZA_RULE_ENGINE=On

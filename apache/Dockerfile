@@ -99,10 +99,11 @@ RUN set -eux; \
     apt-get install -qq --no-install-recommends gettext-base; \
     rm -rf /var/lib/apt/lists/*; \
     ldconfig; \
-    # Enable required modules
+    # Enable required modules and make listen port configurable
     sed -i \
       -e 's/^#LoadModule proxy_module/LoadModule proxy_module/' \
       -e 's/^#LoadModule proxy_http_module/LoadModule proxy_http_module/' \
+      -e 's|Listen 80|Listen ${PORT}|' \
       /usr/local/apache2/conf/httpd.conf
 
 # Copy shared templates and scripts
@@ -159,7 +160,7 @@ ENV \
     CORAZA_UPLOAD_DIR=/tmp/coraza/upload \
     CORAZA_UPLOAD_FILE_MODE=0600 \
     CORAZA_UPLOAD_KEEP_FILES="Off" \
-    PORT=80 \
+    PORT=8080 \
     PARANOIA=1 \
     ANOMALY_INBOUND=5 \
     ANOMALY_OUTBOUND=4 \
