@@ -36,7 +36,7 @@ variable "coraza-apache-version" {
 
 variable "nginx-version" {
     # renovate: depName=nginxinc/nginx-unprivileged datasource=docker
-    default = "1.28.2"
+    default = "1.29.5"
 }
 
 variable "httpd-version" {
