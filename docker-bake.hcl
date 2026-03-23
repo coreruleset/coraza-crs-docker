@@ -16,7 +16,7 @@ variable "coraza-version" {
 
 variable "golang-version" {
     # renovate: depName=golang datasource=docker
-    default = "1.25"
+    default = "1.26"
 }
 
 variable "libcoraza-version" {
