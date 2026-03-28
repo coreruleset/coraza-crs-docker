@@ -122,3 +122,27 @@ jobs:
             echo "OK: audit log file exists and contains data"
           '
           docker rm -f ${{ matrix.target }}-attack-test || true
+
+      - name: Verify concurrent audit logging on attack (${{ matrix.target }})
+        run: |
+          echo "Starting container with concurrent audit logging..."
+          docker run -d --pull "never" --name ${{ matrix.target }}-concurrent-test \
+            -p 18081:8080 \
+            -e CORAZA_AUDIT_ENGINE=On \
+            -e CORAZA_AUDIT_LOG_TYPE=Concurrent \
+            -e CORAZA_AUDIT_STORAGE_DIR=/var/log/coraza/audit \
+            "${{ env.REGISTRY }}/${{ env.REPO }}:${{ matrix.target }}"
+          echo "Waiting for server to start..."
+          sleep 5
+
+          echo "Sending XSS attack payload to trigger a CRS rule..."
+          curl -s -o /dev/null "http://localhost:18081/?search=%3Cscript%3Ealert%281%29%3C%2Fscript%3E" || true
+
+          echo "Checking that concurrent audit log files were created in storage directory..."
+          docker exec ${{ matrix.target }}-concurrent-test sh -c '
+            find /var/log/coraza/audit -type f 2>/dev/null | grep -q . \
+              || { echo "FAIL: no audit log files found in /var/log/coraza/audit"; exit 1; }
+            echo "OK: concurrent audit log files found in /var/log/coraza/audit:"
+            find /var/log/coraza/audit -type f 2>/dev/null
+          '
+          docker rm -f ${{ matrix.target }}-concurrent-test || true
