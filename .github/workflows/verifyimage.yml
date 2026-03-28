@@ -85,7 +85,6 @@ jobs:
           '
 
       - name: Verify custom CORAZA_AUDIT_STORAGE_DIR is created at runtime (${{ matrix.target }})
-        if: matrix.target == 'caddy-alpine'
         run: |
           echo "Checking entrypoint creates a custom CORAZA_AUDIT_STORAGE_DIR at runtime..."
           docker run -d --pull "never" --name ${{ matrix.target }}-custom-audit-test \
@@ -99,7 +98,6 @@ jobs:
           docker rm -f ${{ matrix.target }}-custom-audit-test || true
 
       - name: Verify audit log file is written on attack (${{ matrix.target }})
-        if: matrix.target == 'caddy-alpine'
         run: |
           echo "Starting container with file-based audit log..."
           docker run -d --pull "never" --name ${{ matrix.target }}-attack-test \
@@ -107,7 +105,7 @@ jobs:
             -e CORAZA_AUDIT_ENGINE=On \
             -e CORAZA_AUDIT_LOG=/var/log/coraza/audit/audit.log \
             "${{ env.REGISTRY }}/${{ env.REPO }}:${{ matrix.target }}"
-          echo "Waiting for Caddy to start..."
+          echo "Waiting for server to start..."
           sleep 5
 
           echo "Sending XSS attack payload to trigger a CRS rule..."
