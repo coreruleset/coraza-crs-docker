@@ -97,3 +97,28 @@ jobs:
             || { echo "FAIL: custom CORAZA_AUDIT_STORAGE_DIR not created by entrypoint"; \
                  docker rm -f ${{ matrix.target }}-custom-audit-test || true; exit 1; }
           docker rm -f ${{ matrix.target }}-custom-audit-test || true
+
+      - name: Verify audit log file is written on attack (${{ matrix.target }})
+        if: matrix.target == 'caddy-alpine'
+        run: |
+          echo "Starting container with file-based audit log..."
+          docker run -d --pull "never" --name ${{ matrix.target }}-attack-test \
+            -p 18080:8080 \
+            -e CORAZA_AUDIT_ENGINE=On \
+            -e CORAZA_AUDIT_LOG=/var/log/coraza/audit/audit.log \
+            "${{ env.REGISTRY }}/${{ env.REPO }}:${{ matrix.target }}"
+          echo "Waiting for Caddy to start..."
+          sleep 5
+
+          echo "Sending XSS attack payload to trigger a CRS rule..."
+          curl -s -o /dev/null "http://localhost:18080/?search=%3Cscript%3Ealert%281%29%3C%2Fscript%3E" || true
+
+          echo "Checking that audit log file was created with content..."
+          docker exec ${{ matrix.target }}-attack-test sh -c '
+            test -f /var/log/coraza/audit/audit.log \
+              || { echo "FAIL: audit log file was not created"; exit 1; }
+            test -s /var/log/coraza/audit/audit.log \
+              || { echo "FAIL: audit log file is empty"; exit 1; }
+            echo "OK: audit log file exists and contains data"
+          '
+          docker rm -f ${{ matrix.target }}-attack-test || true
