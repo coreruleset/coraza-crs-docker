@@ -67,3 +67,33 @@ jobs:
       - name: Verify ${{ matrix.target }}
         run: |
           [ $(docker inspect ${{ matrix.target }}-test --format='{{.State.Running}}') = 'true' ]
+
+      - name: Verify audit log directories (${{ matrix.target }})
+        if: matrix.target == 'caddy-alpine'
+        run: |
+          echo "Checking default audit log directories exist and are writable..."
+          docker exec ${{ matrix.target }}-test sh -c '
+            test -d /var/log/coraza/audit \
+              || { echo "FAIL: /var/log/coraza/audit does not exist"; exit 1; }
+            test -w /var/log/coraza/audit \
+              || { echo "FAIL: /var/log/coraza/audit is not writable"; exit 1; }
+            test -d /var/log/caddy \
+              || { echo "FAIL: /var/log/caddy does not exist"; exit 1; }
+            test -w /var/log/caddy \
+              || { echo "FAIL: /var/log/caddy is not writable"; exit 1; }
+            echo "OK: audit log directories exist and are writable"
+          '
+
+      - name: Verify custom CORAZA_AUDIT_STORAGE_DIR is created at runtime (${{ matrix.target }})
+        if: matrix.target == 'caddy-alpine'
+        run: |
+          echo "Checking entrypoint creates a custom CORAZA_AUDIT_STORAGE_DIR at runtime..."
+          docker run -d --pull "never" --name ${{ matrix.target }}-custom-audit-test \
+            -e CORAZA_AUDIT_STORAGE_DIR=/tmp/custom-audit-test \
+            "${{ env.REGISTRY }}/${{ env.REPO }}:${{ matrix.target }}"
+          sleep 3
+          docker exec ${{ matrix.target }}-custom-audit-test test -d /tmp/custom-audit-test \
+            && echo "OK: custom CORAZA_AUDIT_STORAGE_DIR created by entrypoint" \
+            || { echo "FAIL: custom CORAZA_AUDIT_STORAGE_DIR not created by entrypoint"; \
+                 docker rm -f ${{ matrix.target }}-custom-audit-test || true; exit 1; }
+          docker rm -f ${{ matrix.target }}-custom-audit-test || true
