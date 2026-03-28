@@ -2,6 +2,13 @@
 
 # Generate appropriate configuration files and launch Caddy
 set -e
+
+# Create Coraza runtime directories
+mkdir -p "${CORAZA_TMP_DIR:-/tmp/coraza}" \
+         "${CORAZA_DATA_DIR:-/tmp/coraza/data}" \
+         "${CORAZA_UPLOAD_DIR:-/tmp/coraza/upload}" \
+         "${CORAZA_AUDIT_STORAGE_DIR:-/var/log/coraza/audit}"
+
 echo "Generating configuration files..."
 
 defined_envs=$(printf '${%s} ' $(awk "END { for (name in ENVIRON) { print ( name ~ /${filter}/ ) ? name : \"\" } }" < /dev/null ))
