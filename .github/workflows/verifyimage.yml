@@ -127,6 +127,7 @@ jobs:
           docker run -d --pull "never" --name ${{ matrix.target }}-concurrent-test \
             -p 18081:8080 \
             -e CORAZA_AUDIT_ENGINE=On \
+            -e CORAZA_AUDIT_LOG=/var/log/coraza/audit.log \
             -e CORAZA_AUDIT_LOG_TYPE=Concurrent \
             -e CORAZA_AUDIT_STORAGE_DIR=/var/log/coraza/audit \
             "${{ env.REGISTRY }}/${{ env.REPO }}:${{ matrix.target }}"
@@ -139,8 +140,13 @@ jobs:
           echo "Checking that concurrent audit log files were created in storage directory..."
           docker exec ${{ matrix.target }}-concurrent-test sh -c '
             find /var/log/coraza/audit -type f 2>/dev/null | grep -q . \
-              || { echo "FAIL: no audit log files found in /var/log/coraza/audit"; exit 1; }
+              || { echo "FAIL: no per-transaction audit log files found in /var/log/coraza/audit"; exit 1; }
             echo "OK: concurrent audit log files found in /var/log/coraza/audit:"
             find /var/log/coraza/audit -type f 2>/dev/null
-          '
+          ' || {
+            echo "--- Container logs for debugging ---"
+            docker logs ${{ matrix.target }}-concurrent-test 2>&1 | tail -50
+            docker rm -f ${{ matrix.target }}-concurrent-test || true
+            exit 1
+          }
           docker rm -f ${{ matrix.target }}-concurrent-test || true
