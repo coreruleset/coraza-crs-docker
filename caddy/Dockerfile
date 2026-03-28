@@ -90,6 +90,8 @@ COPY src/bin/activate-rules.sh /opt/coraza/activate-rules.sh
 # This should only be done if the Caddy user/group is not set to root
 # hadolint ignore=DL3018,SC1075
 RUN set -eux; \
+  # Create default log directories
+  mkdir -p "/var/log/coraza/audit" "/var/log/caddy"; \
   # Test if Caddy user is root; if so these steps are not required
   if [ "$CADDY_USER" = "root" ]; \
   then \
@@ -105,6 +107,8 @@ RUN set -eux; \
       "${CADDY_DATA_DIR}" \
       "/opt/coraza" \
       "/etc/caddy" \
+      "/var/log/coraza" \
+      "/var/log/caddy" \
     ; \
   fi
 
