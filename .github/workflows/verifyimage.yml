@@ -55,6 +55,7 @@ jobs:
           targets: ${{ matrix.target }}
           set: |
             *.platform=linux/amd64
+            ${{ matrix.target }}.tags=${{ env.REGISTRY }}/${{ env.REPO }}:${{ matrix.target }}
           load: true
           push: false
 
@@ -69,7 +70,7 @@ jobs:
           [ $(docker inspect ${{ matrix.target }}-test --format='{{.State.Running}}') = 'true' ]
 
       - name: Verify audit log directories (${{ matrix.target }})
-        if: matrix.target == 'caddy-alpine'
+        if: startsWith(matrix.target, 'caddy-alpine')
         run: |
           echo "Checking default audit log directories exist and are writable..."
           docker exec ${{ matrix.target }}-test sh -c '
