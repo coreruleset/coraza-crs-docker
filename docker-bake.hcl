@@ -9,10 +9,10 @@ variable "v4-lts-crs-version" {
 }
 
 variable "crs-versions" {
-    default = {
-        "lts"    = v4-lts-crs-version,
-        "latest" = crs-version
-    }
+    default = [
+        { tag = "lts",    version = v4-lts-crs-version },
+        { tag = "latest", version = crs-version }
+    ]
 }
 
 variable "caddy-version" {
@@ -126,33 +126,33 @@ target "platforms-base" {
 
 target "caddy-alpine" {
     matrix = {
-        crs_release = crs-versions
+        crs_entry = crs-versions
     }
     inherits = ["platforms-base"]
-    name = "caddy-alpine-${replace(crs_release, ".", "-")}"
+    name = "caddy-alpine-${crs_entry.tag}"
     context="."
     dockerfile="caddy/Dockerfile"
     args = {
-        CRS_VERSION = crs_release
+        CRS_VERSION = crs_entry.version
     }
     tags = concat(
         tag("caddy-alpine"),
-        vtag("${crs_release}", "caddy-alpine"),
-        equal(crs_release, v4-lts-crs-version) ? lts-tag("${crs_release}", "caddy-alpine") : []
+        vtag("${crs_entry.version}", "caddy-alpine"),
+        equal(crs_entry.tag, "lts") ? lts-tag("${crs_entry.version}", "caddy-alpine") : []
     )
 }
 
 target "nginx" {
     matrix = {
-        crs_release = crs-versions
+        crs_entry = crs-versions
     }
     inherits = ["platforms-base"]
-    name = "nginx-${replace(crs_release, ".", "-")}"
+    name = "nginx-${crs_entry.tag}"
     context="."
     dockerfile="nginx/Dockerfile"
     platforms = ["linux/amd64", "linux/arm64"]
     args = {
-        CRS_VERSION = crs_release
+        CRS_VERSION = crs_entry.version
         GOLANG_VERSION = "${golang-version}"
         LIBCORAZA_VERSION = "${libcoraza-version}"
         CORAZA_NGINX_VERSION = "${coraza-nginx-version}"
@@ -160,22 +160,22 @@ target "nginx" {
     }
     tags = concat(
         tag("nginx"),
-        vtag("${crs_release}", "nginx"),
-        equal(crs_release, v4-lts-crs-version) ? lts-tag("${crs_release}", "nginx") : []
+        vtag("${crs_entry.version}", "nginx"),
+        equal(crs_entry.tag, "lts") ? lts-tag("${crs_entry.version}", "nginx") : []
     )
 }
 
 target "apache" {
     matrix = {
-        crs_release = crs-versions
+        crs_entry = crs-versions
     }
     inherits = ["platforms-base"]
-    name = "apache-${replace(crs_release, ".", "-")}"
+    name = "apache-${crs_entry.tag}"
     context="."
     dockerfile="apache/Dockerfile"
     platforms = ["linux/amd64", "linux/arm64"]
     args = {
-        CRS_VERSION = crs_release
+        CRS_VERSION = crs_entry.version
         GOLANG_VERSION = "${golang-version}"
         LIBCORAZA_VERSION = "${libcoraza-version}"
         CORAZA_APACHE_VERSION = "${coraza-apache-version}"
@@ -183,7 +183,7 @@ target "apache" {
     }
     tags = concat(
         tag("apache"),
-        vtag("${crs_release}", "apache"),
-        equal(crs_release, v4-lts-crs-version) ? lts-tag("${crs_release}", "apache") : []
+        vtag("${crs_entry.version}", "apache"),
+        equal(crs_entry.tag, "lts") ? lts-tag("${crs_entry.version}", "apache") : []
     )
 }
