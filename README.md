@@ -12,7 +12,39 @@ Three web server variants are available:
 
 The containers act as a reverse proxy, inspecting traffic with Coraza WAF and CRS before forwarding to a backend service.
 
+## Supported Tags
+
+### Stable Tags
+
+Stable tags include the CRS version and a timestamp: `<CRS version>-<variant>-<date>`.
+
+Examples:
+   * `4-caddy-alpine-202509051009`
+   * `4.25-nginx-202509051009`
+   * `4.25.0-apache-202509051009`
+
+### Rolling Tags
+
+Rolling tags are updated on every release and always point to the latest build. They should not be used in production.
+
+Examples:
+   * `caddy-alpine`
+   * `nginx`
+   * `apache`
+
+### LTS Tags
+
+LTS (Long-Term Support) tags point to a designated LTS release and are updated less frequently than stable tags.
+
+The LTS tag format is `<CRS version>-<variant>-lts`.
+
+Examples:
+   * `4.25-caddy-alpine-lts`
+   * `4.25.0-nginx-lts`
+   * `4.25-apache-lts`
+
 - [Coraza CRS Docker](#coraza-crs-docker)
+  - [Supported Tags](#supported-tags)
   - [Quick Start](#quick-start)
   - [Env Variables](#env-variables)
     - [Coraza Specific](#coraza-specific)

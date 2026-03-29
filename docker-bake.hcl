@@ -4,6 +4,10 @@ variable "crs-version" {
     default = "4.25.0"
 }
 
+variable "v4-lts-crs-version" {
+    default = "4.25.0"
+}
+
 variable "caddy-version" {
     # renovate: depName=caddy datasource=docker
     default = "2.11.2"
@@ -82,6 +86,14 @@ function "vtag" {
     )
 }
 
+function "ltag" {
+    params = [semver, variant]
+    result = concat(
+        tag("${minor(semver)}-${variant}-lts"),
+        tag("${patch(semver)}-${variant}-lts")
+    )
+}
+
 group "default" {
     targets = [
         "caddy-alpine",
@@ -110,8 +122,10 @@ target "caddy-alpine" {
     inherits = ["platforms-base"]
     context="."
     dockerfile="caddy/Dockerfile"
-    tags = concat(tag("caddy-alpine"),
-        vtag("${crs-version}", "caddy-alpine")
+    tags = concat(
+        tag("caddy-alpine"),
+        vtag("${crs-version}", "caddy-alpine"),
+        equal(crs-version, v4-lts-crs-version) ? ltag("${crs-version}", "caddy-alpine") : []
     )
 }
 
@@ -127,8 +141,10 @@ target "nginx" {
         CORAZA_NGINX_VERSION = "${coraza-nginx-version}"
         NGINX_VERSION = "${nginx-version}"
     }
-    tags = concat(tag("nginx"),
-        vtag("${crs-version}", "nginx")
+    tags = concat(
+        tag("nginx"),
+        vtag("${crs-version}", "nginx"),
+        equal(crs-version, v4-lts-crs-version) ? ltag("${crs-version}", "nginx") : []
     )
 }
 
@@ -144,7 +160,9 @@ target "apache" {
         CORAZA_APACHE_VERSION = "${coraza-apache-version}"
         HTTPD_VERSION = "${httpd-version}"
     }
-    tags = concat(tag("apache"),
-        vtag("${crs-version}", "apache")
+    tags = concat(
+        tag("apache"),
+        vtag("${crs-version}", "apache"),
+        equal(crs-version, v4-lts-crs-version) ? ltag("${crs-version}", "apache") : []
     )
 }
