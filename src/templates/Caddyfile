@@ -4,6 +4,9 @@
 # Ensure Coraza WAF runs first - this must be included for Coraza to be working
 {
   order coraza_waf first
+  log {
+    level ${LOGLEVEL}
+  }
 }
 
 # Create the HTTP listener
@@ -49,6 +52,12 @@
   # Proxy traffic to the relevant container(s)
   reverse_proxy ${BACKEND} {
     trusted_proxies private_ranges
+    transport http {
+      dial_timeout ${PROXY_TIMEOUT}
+      read_timeout ${PROXY_TIMEOUT}
+      write_timeout ${PROXY_TIMEOUT}
+      keepalive ${KEEPALIVE_TIMEOUT}
+    }
   }
 
   log {

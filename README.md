@@ -136,29 +136,26 @@ curl "http://localhost:8081/?id=1%20AND%201=1"
 
 ### Web Server Specific
 
-#### Caddy
+These variables apply to all variants (nginx, Apache, Caddy). Not every setting translates perfectly across servers — when a variable doesn't map to something meaningful, it's ignored on that variant.
+
+| Variable | Default | Description | nginx | Apache | Caddy |
+| - | - | - | :-: | :-: | :-: |
+| `BACKEND` | `localhost:80` | Backend `host:port` to proxy to | ✅ | ✅ | ✅ |
+| `PORT` | `8080` | Listen port | ✅ | ✅ | ✅ |
+| `SERVER_NAME` | `localhost` | Server name | ✅ | ✅ | — |
+| `SERVER_TOKENS` | `off` (nginx/caddy), `Prod` (apache) | Hide server version info | ✅ | ✅ | — |
+| `WORKER_CONNECTIONS` | `1024` | Max concurrent connections per worker | ✅ | ✅ | — |
+| `KEEPALIVE_TIMEOUT` | `60s` | Client keepalive timeout | ✅ | ✅ | ✅ |
+| `PROXY_TIMEOUT` | `60s` | Backend proxy timeout | ✅ | ✅ | ✅ |
+| `LOGLEVEL` | `warn` | Server error log level | ✅ | ✅ | ✅ |
+| `ACCESSLOG` | `/dev/stdout` | Access log destination | ✅ | ✅ | ✅ |
+| `ERRORLOG` | `/dev/stderr` | Error log destination | ✅ | ✅ | — |
+
+#### Caddy-only
 
 | Variable | Default | Description |
 | - | - | - |
-| BACKEND | `localhost:80` | Backend `host:port` to proxy to |
-| PORT | `8080` | Listen port |
-| ACCESSLOG | `/var/log/caddy/access.log` | Access log path |
-| CORAZA_TAG | `coraza` | Default tag for CRS rules |
-
-#### nginx
-
-| Variable | Default | Description |
-| - | - | - |
-| BACKEND | `localhost:80` | Backend `host:port` to proxy to |
-| PORT | `8080` | Listen port |
-| NGINX_LOGLEVEL | `warn` | nginx error log level |
-
-#### Apache
-
-| Variable | Default | Description |
-| - | - | - |
-| BACKEND | `localhost:80` | Backend `host:port` to proxy to |
-| PORT | `80` | Listen port |
+| `CORAZA_TAG` | `coraza` | Default tag for CRS rules |
 
 ## Important Notes
 
@@ -187,7 +184,7 @@ The following configuration paths are shared across all variants:
 
 | Variable | Default | Description |
 | -------- | ------- | ----------- |
-| `CRS_VERSION` | `4.24.1` | OWASP CRS release version |
+| `CRS_VERSION` | `4.25.0` | OWASP CRS release version (LTS) |
 | `CADDY_VERSION` | `2.11.2` | Caddy Docker tag (caddy variant) |
 | `NGINX_VERSION` | `1.28.2` | nginx image version (nginx variant) |
 | `HTTPD_VERSION` | `2.4` | httpd image version (apache variant) |

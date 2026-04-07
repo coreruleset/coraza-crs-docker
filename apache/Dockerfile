@@ -105,7 +105,10 @@ RUN set -eux; \
       -e 's/^#LoadModule proxy_module/LoadModule proxy_module/' \
       -e 's/^#LoadModule proxy_http_module/LoadModule proxy_http_module/' \
       -e 's|Listen 80|Listen ${PORT}|' \
-      /usr/local/apache2/conf/httpd.conf
+      /usr/local/apache2/conf/httpd.conf; \
+    # Make worker limits configurable via env var
+    sed -i -E 's|(MaxRequestWorkers[ ]+)[0-9]+|\1${WORKER_CONNECTIONS}|' \
+      /usr/local/apache2/conf/extra/httpd-mpm.conf
 
 # Copy shared templates and scripts
 COPY src/templates/coraza.conf /templates/coraza.conf
@@ -131,6 +134,7 @@ RUN set -eux; \
 WORKDIR /opt/coraza/owasp-crs/rules
 
 ENV \
+    ACCESSLOG=/dev/stdout \
     BACKEND=localhost:80 \
     CORAZA_ARGUMENTS_LIMIT=1000 \
     CORAZA_AUDIT_ENGINE="RelevantOnly" \
@@ -161,7 +165,14 @@ ENV \
     CORAZA_UPLOAD_DIR=/tmp/coraza/upload \
     CORAZA_UPLOAD_FILE_MODE=0600 \
     CORAZA_UPLOAD_KEEP_FILES="Off" \
+    ERRORLOG=/dev/stderr \
+    KEEPALIVE_TIMEOUT=60 \
+    LOGLEVEL=warn \
     PORT=8080 \
+    PROXY_TIMEOUT=60 \
+    SERVER_NAME=localhost \
+    SERVER_TOKENS=Prod \
+    WORKER_CONNECTIONS=1024 \
     PARANOIA=1 \
     ANOMALY_INBOUND=5 \
     ANOMALY_OUTBOUND=4 \

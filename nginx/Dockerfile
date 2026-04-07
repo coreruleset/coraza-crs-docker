@@ -133,6 +133,7 @@ RUN set -eux; \
 USER nginx
 
 ENV \
+    ACCESSLOG=/dev/stdout \
     BACKEND=localhost:80 \
     CORAZA_ARGUMENTS_LIMIT=1000 \
     CORAZA_AUDIT_ENGINE="RelevantOnly" \
@@ -163,8 +164,14 @@ ENV \
     CORAZA_UPLOAD_DIR=/tmp/coraza/upload \
     CORAZA_UPLOAD_FILE_MODE=0600 \
     CORAZA_UPLOAD_KEEP_FILES="Off" \
-    NGINX_LOGLEVEL=warn \
+    ERRORLOG=/dev/stderr \
+    KEEPALIVE_TIMEOUT=60s \
+    LOGLEVEL=warn \
     PORT=8080 \
+    PROXY_TIMEOUT=60s \
+    SERVER_NAME=localhost \
+    SERVER_TOKENS=off \
+    WORKER_CONNECTIONS=1024 \
     PARANOIA=1 \
     ANOMALY_INBOUND=5 \
     ANOMALY_OUTBOUND=4 \
