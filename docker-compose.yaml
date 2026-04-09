@@ -21,7 +21,16 @@ services:
   ## Coraza WAF running on Caddy
   coraza-caddy:
     profiles: ["caddy", "all"]
-    image: ghcr.io/coreruleset/coraza-crs:caddy-alpine
+    build:
+      context: .
+      dockerfile: caddy/Dockerfile
+      args:
+        # renovate: depName=coreruleset/coreruleset datasource=github-releases
+        CRS_VERSION: "4.25.0"
+        # renovate: depName=caddy datasource=docker
+        CADDY_VERSION: "2.11.2"
+        # renovate: depName=corazawaf/coraza-caddy datasource=github-releases
+        CORAZA_VERSION: "v2.2.0"
     depends_on:
       - whoami
     networks:
@@ -39,10 +48,15 @@ services:
       context: .
       dockerfile: nginx/Dockerfile
       args:
-        CRS_VERSION: "4.24.1"
+        # renovate: depName=coreruleset/coreruleset datasource=github-releases
+        CRS_VERSION: "4.25.0"
+        # renovate: depName=golang datasource=docker
         GOLANG_VERSION: "1.25"
+        # renovate: depName=corazawaf/libcoraza datasource=github-releases
         LIBCORAZA_VERSION: "v1.2.0"
+        # renovate: depName=corazawaf/coraza-nginx datasource=github-releases
         CORAZA_NGINX_VERSION: "0.10.1"
+        # renovate: depName=nginxinc/nginx-unprivileged datasource=docker
         NGINX_VERSION: "1.28.2"
     depends_on:
       - whoami
@@ -61,10 +75,15 @@ services:
       context: .
       dockerfile: apache/Dockerfile
       args:
-        CRS_VERSION: "4.24.1"
+        # renovate: depName=coreruleset/coreruleset datasource=github-releases
+        CRS_VERSION: "4.25.0"
+        # renovate: depName=golang datasource=docker
         GOLANG_VERSION: "1.25"
+        # renovate: depName=corazawaf/libcoraza datasource=github-releases
         LIBCORAZA_VERSION: "v1.2.0"
+        # renovate: depName=corazawaf/coraza-apache datasource=github-releases
         CORAZA_APACHE_VERSION: "0.0.1"
+        # renovate: depName=httpd datasource=docker
         HTTPD_VERSION: "2.4"
     depends_on:
       - whoami
