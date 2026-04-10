@@ -150,6 +150,18 @@ These variables apply to all variants (nginx, Apache, Caddy). Not every setting 
 | `LOGLEVEL` | `warn` | Server error log level | ✅ | ✅ | ✅ |
 | `ACCESSLOG` | `/dev/stdout` | Access log destination | ✅ | ✅ | ✅ |
 | `ERRORLOG` | `/dev/stderr` | Error log destination | ✅ | ✅ | — |
+| `SSL_PORT` | `8443` | HTTPS listen port | ✅ | ✅ | — |
+| `SSL_CERT_FILE` | (auto-generated) | TLS certificate path | ✅ | ✅ | — |
+| `SSL_CERT_KEY_FILE` | (auto-generated) | TLS private key path | ✅ | ✅ | — |
+| `SSL_PROTOCOLS` | `TLSv1.2 TLSv1.3` | Allowed TLS protocols | ✅ | ✅ | — |
+| `SSL_CIPHERS` | Mozilla modern | TLS cipher suites | ✅ | ✅ | — |
+| `SSL_PREFER_CIPHERS` | `off` | Prefer server ciphers | ✅ | — | — |
+| `SSL_DH_BITS` | `2048` | DH parameter size (2048/4096) | ✅ | — | — |
+| `SSL_OCSP_STAPLING` | `off` | OCSP stapling | ✅ | — | — |
+| `SSL_VERIFY` | `off` | Client certificate verification | ✅ | — | — |
+| `SSL_VERIFY_DEPTH` | `1` | Client cert chain depth | ✅ | — | — |
+
+A self-signed certificate is generated automatically at startup if no certificate is mounted. To use your own certificate, mount it at the `SSL_CERT_FILE` and `SSL_CERT_KEY_FILE` paths. Caddy handles TLS automatically via its built-in ACME support.
 
 #### Caddy-only
 

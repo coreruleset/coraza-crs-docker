@@ -97,14 +97,16 @@ COPY --from=crs-release /opt/coraza /opt/coraza
 
 RUN set -eux; \
     apt-get update -qq; \
-    apt-get install -qq --no-install-recommends gettext-base; \
+    apt-get install -qq --no-install-recommends gettext-base openssl; \
     rm -rf /var/lib/apt/lists/*; \
     ldconfig; \
-    # Enable required modules and make listen port configurable
+    # Enable required modules and make ports configurable
     sed -i \
       -e 's/^#LoadModule proxy_module/LoadModule proxy_module/' \
       -e 's/^#LoadModule proxy_http_module/LoadModule proxy_http_module/' \
-      -e 's|Listen 80|Listen ${PORT}|' \
+      -e 's/^#LoadModule ssl_module/LoadModule ssl_module/' \
+      -e 's/^#LoadModule socache_shmcb_module/LoadModule socache_shmcb_module/' \
+      -e 's|Listen 80|Listen ${PORT}\nListen ${SSL_PORT}|' \
       /usr/local/apache2/conf/httpd.conf; \
     # Make worker limits configurable via env var
     sed -i -E 's|(MaxRequestWorkers[ ]+)[0-9]+|\1${WORKER_CONNECTIONS}|' \
@@ -172,6 +174,11 @@ ENV \
     PROXY_TIMEOUT=60 \
     SERVER_NAME=localhost \
     SERVER_TOKENS=Prod \
+    SSL_CERT_FILE=/usr/local/apache2/conf/server.crt \
+    SSL_CERT_KEY_FILE=/usr/local/apache2/conf/server.key \
+    SSL_CIPHERS="ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384" \
+    SSL_PORT=8443 \
+    SSL_PROTOCOLS="all -SSLv3 -TLSv1 -TLSv1.1" \
     WORKER_CONNECTIONS=1024 \
     PARANOIA=1 \
     ANOMALY_INBOUND=5 \

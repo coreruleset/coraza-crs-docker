@@ -9,6 +9,17 @@ mkdir -p "${CORAZA_TMP_DIR:-/tmp/coraza}" \
 chown -R www-data:www-data "${CORAZA_TMP_DIR:-/tmp/coraza}" \
                            "${CORAZA_AUDIT_STORAGE_DIR:-/var/log/coraza/audit}"
 
+# Generate self-signed certificate if none provided
+if [ ! -f "${SSL_CERT_FILE}" ]; then
+    echo "Generating self-signed TLS certificate..."
+    cert_dir=$(dirname "${SSL_CERT_FILE}")
+    mkdir -p "${cert_dir}"
+    openssl req -x509 -newkey rsa:2048 -nodes \
+        -keyout "${SSL_CERT_KEY_FILE}" \
+        -out "${SSL_CERT_FILE}" \
+        -days 365 -subj "/CN=${SERVER_NAME:-localhost}" 2>/dev/null
+fi
+
 echo "Generating configuration files..."
 
 defined_envs=$(printf '${%s} ' $(awk "END { for (name in ENVIRON) { print ( name ~ /${filter}/ ) ? name : \"\" } }" < /dev/null ))

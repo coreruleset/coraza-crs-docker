@@ -93,7 +93,11 @@ RUN set -eux; \
       /opt/coraza/owasp-crs; \
     cp -r /var/tmp/owasp-crs/rules /opt/coraza/owasp-crs; \
     cp -r /var/tmp/owasp-crs/plugins /opt/coraza/owasp-crs; \
-    cp /var/tmp/owasp-crs/crs-setup.conf.example /opt/coraza/config/crs-setup.conf
+    cp /var/tmp/owasp-crs/crs-setup.conf.example /opt/coraza/config/crs-setup.conf; \
+    # Download DH params for TLS
+    mkdir -p /usr/share/TLS; \
+    curl -sSL https://ssl-config.mozilla.org/ffdhe2048.txt -o /usr/share/TLS/dhparam-2048.pem; \
+    curl -sSL https://ssl-config.mozilla.org/ffdhe4096.txt -o /usr/share/TLS/dhparam-4096.pem
 
 ## Stage 4: Runtime (unprivileged image)
 FROM nginxinc/nginx-unprivileged:${NGINX_VERSION}
@@ -103,10 +107,11 @@ USER root
 COPY --from=go-builder /usr/local/lib/libcoraza.so /usr/local/lib/
 COPY --from=nginx-builder /usr/lib/nginx/modules/ngx_http_coraza_module.so /usr/lib/nginx/modules/
 COPY --from=crs-release /opt/coraza /opt/coraza
+COPY --from=crs-release /usr/share/TLS/dhparam-* /etc/ssl/certs/
 
 RUN set -eux; \
     apt-get update -qq; \
-    apt-get install -qq --no-install-recommends gettext-base; \
+    apt-get install -qq --no-install-recommends gettext-base openssl; \
     rm -rf /var/lib/apt/lists/*; \
     ldconfig
 
@@ -171,6 +176,16 @@ ENV \
     PROXY_TIMEOUT=60s \
     SERVER_NAME=localhost \
     SERVER_TOKENS=off \
+    SSL_CERT_FILE=/etc/nginx/conf/server.crt \
+    SSL_CERT_KEY_FILE=/etc/nginx/conf/server.key \
+    SSL_CIPHERS="ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384" \
+    SSL_DH_BITS=2048 \
+    SSL_OCSP_STAPLING=off \
+    SSL_PORT=8443 \
+    SSL_PREFER_CIPHERS=off \
+    SSL_PROTOCOLS="TLSv1.2 TLSv1.3" \
+    SSL_VERIFY=off \
+    SSL_VERIFY_DEPTH=1 \
     WORKER_CONNECTIONS=1024 \
     PARANOIA=1 \
     ANOMALY_INBOUND=5 \
@@ -178,6 +193,7 @@ ENV \
     BLOCKING_PARANOIA=1
 
 EXPOSE ${PORT}
+EXPOSE ${SSL_PORT}
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]
