@@ -107,6 +107,9 @@ RUN set -eux; \
       -e 's/^#LoadModule ssl_module/LoadModule ssl_module/' \
       -e 's/^#LoadModule socache_shmcb_module/LoadModule socache_shmcb_module/' \
       -e 's/^#LoadModule headers_module/LoadModule headers_module/' \
+      -e 's/^#LoadModule remoteip_module/LoadModule remoteip_module/' \
+      -e 's/^#LoadModule rewrite_module/LoadModule rewrite_module/' \
+      -e 's/^#LoadModule http2_module/LoadModule http2_module/' \
       -e 's|Listen 80|Listen ${PORT}\nListen ${SSL_PORT}|' \
       /usr/local/apache2/conf/httpd.conf; \
     # Make worker limits configurable via env var
@@ -168,11 +171,15 @@ ENV \
     CORAZA_UPLOAD_DIR=/tmp/coraza/upload \
     CORAZA_UPLOAD_FILE_MODE=0600 \
     CORAZA_UPLOAD_KEEP_FILES="Off" \
+    ALWAYS_TLS_REDIRECT=off \
     ERRORLOG=/dev/stderr \
+    H2_PROTOCOLS="h2 h2c http/1.1" \
     KEEPALIVE_TIMEOUT=60 \
     LOGLEVEL=warn \
     PORT=8080 \
     PROXY_TIMEOUT=60 \
+    REMOTEIP_HEADER="X-Forwarded-For" \
+    REMOTEIP_INT_PROXY="10.1.0.0/16" \
     SERVER_NAME=localhost \
     SERVER_TOKENS=Prod \
     SSL_CERT_FILE=/usr/local/apache2/conf/server.crt \

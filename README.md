@@ -160,6 +160,14 @@ These variables apply to all variants (nginx, Apache, Caddy). Not every setting 
 | `SSL_OCSP_STAPLING` | `off` | OCSP stapling | ✅ | — | — |
 | `SSL_VERIFY` | `off` | Client certificate verification | ✅ | — | — |
 | `SSL_VERIFY_DEPTH` | `1` | Client cert chain depth | ✅ | — | — |
+| `ALWAYS_TLS_REDIRECT` | `off` | Redirect HTTP to HTTPS | ✅ | ✅ | — |
+| `HTTP2` | `on` | Enable HTTP/2 | ✅ | — | — |
+| `H2_PROTOCOLS` | `h2 h2c http/1.1` | HTTP/2 protocols | — | ✅ | — |
+| `SET_REAL_IP_FROM` | `127.0.0.1` | Trusted proxy for real IP | ✅ | — | — |
+| `REAL_IP_HEADER` | `X-Real-IP` | Header containing real client IP | ✅ | — | — |
+| `REAL_IP_RECURSIVE` | `on` | Recursive real IP lookup | ✅ | — | — |
+| `REMOTEIP_HEADER` | `X-Forwarded-For` | Header containing real client IP | — | ✅ | — |
+| `REMOTEIP_INT_PROXY` | `10.1.0.0/16` | Trusted internal proxy range | — | ✅ | — |
 
 A self-signed certificate is generated automatically at startup if no certificate is mounted. To use your own certificate, mount it at the `SSL_CERT_FILE` and `SSL_CERT_KEY_FILE` paths. Caddy handles TLS automatically via its built-in ACME support.
 
