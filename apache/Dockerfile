@@ -106,6 +106,7 @@ RUN set -eux; \
       -e 's/^#LoadModule proxy_http_module/LoadModule proxy_http_module/' \
       -e 's/^#LoadModule ssl_module/LoadModule ssl_module/' \
       -e 's/^#LoadModule socache_shmcb_module/LoadModule socache_shmcb_module/' \
+      -e 's/^#LoadModule headers_module/LoadModule headers_module/' \
       -e 's|Listen 80|Listen ${PORT}\nListen ${SSL_PORT}|' \
       /usr/local/apache2/conf/httpd.conf; \
     # Make worker limits configurable via env var

@@ -96,8 +96,8 @@ RUN set -eux; \
     cp /var/tmp/owasp-crs/crs-setup.conf.example /opt/coraza/config/crs-setup.conf; \
     # Download DH params for TLS
     mkdir -p /usr/share/TLS; \
-    curl -sSL https://ssl-config.mozilla.org/ffdhe2048.txt -o /usr/share/TLS/dhparam-2048.pem; \
-    curl -sSL https://ssl-config.mozilla.org/ffdhe4096.txt -o /usr/share/TLS/dhparam-4096.pem
+    curl -fsSL https://ssl-config.mozilla.org/ffdhe2048.txt -o /usr/share/TLS/dhparam-2048.pem; \
+    curl -fsSL https://ssl-config.mozilla.org/ffdhe4096.txt -o /usr/share/TLS/dhparam-4096.pem
 
 ## Stage 4: Runtime (unprivileged image)
 FROM nginxinc/nginx-unprivileged:${NGINX_VERSION}

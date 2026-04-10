@@ -153,8 +153,8 @@ These variables apply to all variants (nginx, Apache, Caddy). Not every setting 
 | `SSL_PORT` | `8443` | HTTPS listen port | ✅ | ✅ | — |
 | `SSL_CERT_FILE` | (auto-generated) | TLS certificate path | ✅ | ✅ | — |
 | `SSL_CERT_KEY_FILE` | (auto-generated) | TLS private key path | ✅ | ✅ | — |
-| `SSL_PROTOCOLS` | `TLSv1.2 TLSv1.3` | Allowed TLS protocols | ✅ | ✅ | — |
-| `SSL_CIPHERS` | Mozilla modern | TLS cipher suites | ✅ | ✅ | — |
+| `SSL_PROTOCOLS` | nginx: `TLSv1.2 TLSv1.3`, apache: `all -SSLv3 -TLSv1 -TLSv1.1` | Allowed TLS protocols (syntax differs per server) | ✅ | ✅ | — |
+| `SSL_CIPHERS` | [Mozilla intermediate](https://ssl-config.mozilla.org/) | TLS cipher suites | ✅ | ✅ | — |
 | `SSL_PREFER_CIPHERS` | `off` | Prefer server ciphers | ✅ | — | — |
 | `SSL_DH_BITS` | `2048` | DH parameter size (2048/4096) | ✅ | — | — |
 | `SSL_OCSP_STAPLING` | `off` | OCSP stapling | ✅ | — | — |
