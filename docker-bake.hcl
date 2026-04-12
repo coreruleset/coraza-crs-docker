@@ -32,7 +32,7 @@ variable "golang-version" {
 
 variable "libcoraza-version" {
     # renovate: depName=corazawaf/libcoraza datasource=github-releases
-    default = "v1.3.0"
+    default = "v1.4.0"
 }
 
 variable "coraza-nginx-version" {
