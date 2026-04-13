@@ -22,7 +22,7 @@ variable "caddy-version" {
 
 variable "coraza-version" {
     # renovate: depName=corazawaf/coraza-caddy datasource=github-releases
-    default = "v2.4.0"
+    default = "v2.5.0"
 }
 
 variable "golang-version" {
