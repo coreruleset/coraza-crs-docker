@@ -42,12 +42,12 @@ variable "coraza-nginx-version" {
 
 variable "coraza-apache-version" {
     # renovate: depName=corazawaf/coraza-apache datasource=github-releases
-    default = "0.1.0"
+    default = "0.2.0"
 }
 
 variable "nginx-version" {
     # renovate: depName=nginxinc/nginx-unprivileged datasource=docker
-    default = "1.29.5"
+    default = "1.29.8"
 }
 
 variable "httpd-version" {
