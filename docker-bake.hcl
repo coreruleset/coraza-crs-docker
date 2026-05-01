@@ -116,7 +116,8 @@ target "platforms-base" {
     context="."
     platforms = ["linux/amd64", "linux/arm/v6", "linux/arm/v7", "linux/arm64"]
     labels = {
-        "org.opencontainers.image.source" = "https://github.com/coreruleset/coraza-crs-docker"
+        "org.opencontainers.image.source"      = "https://github.com/coreruleset/coraza-crs-docker"
+        "org.opencontainers.image.description" = "OWASP CRS (Core Rule Set) running on Coraza WAF — available for Caddy, nginx, and Apache"
     }
     args = {
         CADDY_VERSION = "${caddy-version}"
