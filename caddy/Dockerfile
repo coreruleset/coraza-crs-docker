@@ -2,14 +2,14 @@
 ARG CADDY_VERSION="n/a"
 
 # Use official Caddy builder image
-FROM caddy:"${CADDY_VERSION}-builder" AS builder-caddy
+FROM caddy:${CADDY_VERSION}-builder AS builder-caddy
 
 # Build Caddy with Coraza
 RUN --mount=type=cache,target=/go,id=caddy \
   xcaddy build --with github.com/corazawaf/coraza-caddy
 
 # Use official caddy builder image to get Core Rule Set
-FROM caddy:"${CADDY_VERSION}-builder" AS builder-crs
+FROM caddy:${CADDY_VERSION}-builder AS builder-crs
 
 # Set OWASP ModSecurity core rule set release tag to check out
 # Available tags are on the GitHub releases page here: https://github.com/coreruleset/coreruleset/tags
@@ -57,7 +57,7 @@ RUN set -eux; \
   cp /var/tmp/owasp-crs/crs-setup.conf.example /opt/coraza/config/crs-setup.conf
 
 # Switch to official Caddy container
-FROM caddy:"$CADDY_VERSION"
+FROM caddy:${CADDY_VERSION}
 
 # Add libcap to allow Caddy to bind to port 80/443 with a low privledged account
 # If this is not required it may be disabled (eg. if Caddy is listening on a high port)
