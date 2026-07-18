@@ -3,9 +3,6 @@
   "extends": [
     "github>coreruleset/renovate-config"
   ],
-  "enabledManagers": [
-    "custom.regex"
-  ],
   "customManagers": [
     {
       "description": "Bake file",
