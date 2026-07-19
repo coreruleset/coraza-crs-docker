@@ -16,13 +16,13 @@ jobs:
   prepare:
     runs-on: ubuntu-latest
     outputs:
-      targets: ${{ steps.generate.outputs.targets }}
+      matrix: ${{ steps.generate.outputs.matrix }}
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-      - name: List targets
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - name: Generate matrix
         id: generate
-        uses: docker/bake-action/subaction/list-targets@aefd381cbaa93c62a1e8b02194ae420cc36269d2 # v4
+        uses: docker/bake-action/subaction/matrix@d3418bd7d0e9324001bca92fa8ba175ea7e6dc9b # v7
 
   build:
     runs-on: ubuntu-latest
@@ -30,10 +30,10 @@ jobs:
       - prepare
     strategy:
       matrix:
-        target: ${{ fromJson(needs.prepare.outputs.targets) }}
+        include: ${{ fromJson(needs.prepare.outputs.matrix) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           fetch-depth: 1
 
@@ -48,7 +48,7 @@ jobs:
           driver-opts: image=moby/buildkit:master
 
       - name: Build images
-        uses: docker/bake-action@aefd381cbaa93c62a1e8b02194ae420cc36269d2 # v4.7.0
+        uses: docker/bake-action@d3418bd7d0e9324001bca92fa8ba175ea7e6dc9b # v7.3.0
         with:
           files: |
             ./docker-bake.hcl
