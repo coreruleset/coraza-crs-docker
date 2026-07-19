@@ -69,7 +69,7 @@ jobs:
 
       - name: 'Build and push to Docker Hub: ${{ matrix.target }}'
         id: build-and-push
-        uses: docker/bake-action@aefd381cbaa93c62a1e8b02194ae420cc36269d2 # v4.7.0
+        uses: docker/bake-action@d3418bd7d0e9324001bca92fa8ba175ea7e6dc9b # v7.3.0
         with:
           files: |
             ./docker-bake.hcl
