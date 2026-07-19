@@ -38,5 +38,13 @@
       "depNameTemplate": "coreruleset/coreruleset",
       "datasourceTemplate": "github-releases"
     }
+  ],
+  "packageRules": [
+    {
+      "description": "nginx uses odd minors for mainline and even minors for stable; only track stable",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["nginx", "nginxinc/nginx-unprivileged"],
+      "allowedVersions": "/^\\d+\\.\\d*[02468]\\.\\d+$/"
+    }
   ]
 }

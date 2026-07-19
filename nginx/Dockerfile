@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-ARG NGINX_VERSION="1.28.2"
+ARG NGINX_VERSION="1.30.4"
 ARG GOLANG_VERSION="1.25"
 
 ## Stage 1: Build libcoraza from source
