@@ -12,13 +12,13 @@ jobs:
     permissions:
       contents: read
     outputs:
-      targets: ${{ steps.generate.outputs.targets }}
+      matrix: ${{ steps.generate.outputs.matrix }}
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-      - name: List targets
+      - name: Generate matrix
         id: generate
-        uses: docker/bake-action/subaction/list-targets@d3418bd7d0e9324001bca92fa8ba175ea7e6dc9b # v7
+        uses: docker/bake-action/subaction/matrix@d3418bd7d0e9324001bca92fa8ba175ea7e6dc9b # v7
 
   build:
     name: Build ${{ matrix.target }}
@@ -31,7 +31,7 @@ jobs:
       id-token: write # needed for signing the images with GitHub OIDC Token
     strategy:
       matrix:
-        target: ${{ fromJson(needs.prepare.outputs.targets) }}
+        include: ${{ fromJson(needs.prepare.outputs.matrix) }}
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
