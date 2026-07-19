@@ -1,5 +1,5 @@
 # Set Caddy release tag
-ARG CADDY_VERSION="n/a"
+ARG CADDY_VERSION="2.11.2"
 
 # Use official Caddy builder image
 FROM caddy:${CADDY_VERSION}-builder AS builder-caddy
