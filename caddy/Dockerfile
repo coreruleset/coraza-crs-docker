@@ -4,9 +4,15 @@ ARG CADDY_VERSION="2.11.3@sha256:ec18ee54aab3315c22e25f3b2babda73ff8007d39b13b3b
 # Use official Caddy builder image
 FROM caddy:${CADDY_VERSION}-builder AS builder-caddy
 
+# Set coraza-caddy release tag to build against
+# Available tags are on the GitHub releases page here: https://github.com/corazawaf/coraza-caddy/tags
+ARG CORAZA_VERSION="n/a"
+
 # Build Caddy with Coraza
+# The module path must carry the /v2 suffix: without it Go resolves the v1
+# module (coraza-caddy v1.2.2), whatever CORAZA_VERSION says.
 RUN --mount=type=cache,target=/go,id=caddy \
-  xcaddy build --with github.com/corazawaf/coraza-caddy
+  xcaddy build --with github.com/corazawaf/coraza-caddy/v2@${CORAZA_VERSION}
 
 # Use official caddy builder image to get Core Rule Set
 FROM caddy:${CADDY_VERSION}-builder AS builder-crs
@@ -159,8 +165,8 @@ ENV \
     CORAZA_DATA_DIR='/tmp/coraza/data' \
     CORAZA_DEBUG_LOG=/dev/null \
     CORAZA_DEBUG_LOGLEVEL=1 \
-    CORAZA_DEFAULT_PHASE1_ACTION="phase:1,pass,log,tag:'\${CORAZA_TAG}'" \
-    CORAZA_DEFAULT_PHASE2_ACTION="phase:2,pass,log,tag:'\${CORAZA_TAG}'" \
+    CORAZA_DEFAULT_PHASE1_ACTION="phase:1,pass,log" \
+    CORAZA_DEFAULT_PHASE2_ACTION="phase:2,pass,log" \
     CORAZA_REQ_BODY_ACCESS="On" \
     CORAZA_REQ_BODY_JSON_DEPTH_LIMIT=1024 \
     CORAZA_REQ_BODY_LIMIT=13107200 \
