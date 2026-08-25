@@ -61,7 +61,13 @@ RUN_ID="$$"
 NETWORK="coraza-test-net-${RUN_ID}"
 BACKEND_NAME="coraza-test-whoami-${RUN_ID}"
 TMP_DIR="$(mktemp -d)"
+# Every container started by the run, removed by cleanup(). They are kept
+# running until the end so their logs are still available if a later check
+# fails.
 CONTAINERS=()
+# Set by start_waf.
+WAF_NAME=""
+WAF_ENDPOINT=""
 
 TESTS_RUN=0
 TESTS_FAILED=0
@@ -123,8 +129,10 @@ trap cleanup EXIT
 # ---------------------------------------------------------------------------
 
 # start_waf <name-suffix> [env KEY=VALUE ...] [-- extra docker run args]
-# Starts the image under test on an ephemeral host port and echoes the
-# host:port it is reachable on.
+# Starts the image under test on an ephemeral host port and sets WAF_NAME to
+# the container name and WAF_ENDPOINT to the host:port it is reachable on.
+# It must not be called in a subshell: it registers the container in
+# CONTAINERS so that cleanup() can dump its logs and remove it.
 start_waf() {
   local suffix="$1"; shift
   local name="coraza-test-${suffix}-${RUN_ID}"
@@ -141,10 +149,9 @@ start_waf() {
   docker run "${args[@]}" "${IMAGE}" >/dev/null || die "could not start ${name}"
   CONTAINERS+=("${name}")
 
-  local hostport
-  hostport="$(docker port "${name}" 8080/tcp | head -1)" \
+  WAF_NAME="${name}"
+  WAF_ENDPOINT="$(docker port "${name}" 8080/tcp | head -1)" \
     || die "could not read published port of ${name}"
-  echo "${name} ${hostport}"
 }
 
 # wait_for_http <host:port> — wait until the server answers anything at all.
@@ -253,7 +260,9 @@ echo "  backend ${BACKEND_NAME} started on network ${NETWORK}"
 
 group "Default configuration (${VARIANT}, CORAZA_RULE_ENGINE=On)"
 
-read -r MAIN_NAME MAIN <<<"$(start_waf main)"
+start_waf main
+MAIN_NAME="${WAF_NAME}"
+MAIN="${WAF_ENDPOINT}"
 wait_for_http "${MAIN}" || die "${MAIN_NAME} did not start serving within ${STARTUP_TIMEOUT}s"
 
 if [ "$(docker inspect "${MAIN_NAME}" --format '{{.State.Running}}')" = "true" ]; then
@@ -298,21 +307,23 @@ assert_status_in "403 405" "disallowed HTTP method is rejected" \
 
 group "CORAZA_RULE_ENGINE=DetectionOnly"
 
-read -r DETECT_NAME DETECT <<<"$(start_waf detectiononly CORAZA_RULE_ENGINE=DetectionOnly)"
+start_waf detectiononly CORAZA_RULE_ENGINE=DetectionOnly
+DETECT_NAME="${WAF_NAME}"
+DETECT="${WAF_ENDPOINT}"
 wait_for_http "${DETECT}" || die "${DETECT_NAME} did not start serving"
 assert_status 200 "attack is detected but not blocked" \
   "${DETECT}" "/?search=%3Cscript%3Ealert%281%29%3C%2Fscript%3E"
-docker rm -f "${DETECT_NAME}" >/dev/null
 
 group "CORAZA_RULE_ENGINE=Off"
 
-read -r OFF_NAME OFF <<<"$(start_waf engineoff CORAZA_RULE_ENGINE=Off)"
+start_waf engineoff CORAZA_RULE_ENGINE=Off
+OFF_NAME="${WAF_NAME}"
+OFF="${WAF_ENDPOINT}"
 wait_for_http "${OFF}" || die "${OFF_NAME} did not start serving"
 assert_status 200 "attack passes through with the engine disabled" \
   "${OFF}" "/?search=%3Cscript%3Ealert%281%29%3C%2Fscript%3E"
 assert_status 200 "legitimate traffic still proxied with the engine disabled" \
   "${OFF}" "/"
-docker rm -f "${OFF_NAME}" >/dev/null
 
 # ---------------------------------------------------------------------------
 # CRS tuning variables (activate-rules.sh)
@@ -320,11 +331,12 @@ docker rm -f "${OFF_NAME}" >/dev/null
 
 group "CRS anomaly threshold (ANOMALY_INBOUND)"
 
-read -r ANOM_NAME ANOM <<<"$(start_waf anomaly ANOMALY_INBOUND=10000)"
+start_waf anomaly ANOMALY_INBOUND=10000
+ANOM_NAME="${WAF_NAME}"
+ANOM="${WAF_ENDPOINT}"
 wait_for_http "${ANOM}" || die "${ANOM_NAME} did not start serving"
 assert_status 200 "attack stays under a very high inbound threshold" \
   "${ANOM}" "/?search=%3Cscript%3Ealert%281%29%3C%2Fscript%3E"
-docker rm -f "${ANOM_NAME}" >/dev/null
 
 group "Custom rules from /opt/coraza/rules.d"
 
@@ -358,8 +370,10 @@ SecRule TX:test_response_block "@eq 1" \
 RULE
 chmod 644 "${TMP_DIR}/custom.conf"
 
-read -r CUSTOM_NAME CUSTOM <<<"$(start_waf customrule \
-  -- -v "${TMP_DIR}/custom.conf:/opt/coraza/rules.d/custom.conf:ro")"
+start_waf customrule \
+  -- -v "${TMP_DIR}/custom.conf:/opt/coraza/rules.d/custom.conf:ro"
+CUSTOM_NAME="${WAF_NAME}"
+CUSTOM="${WAF_ENDPOINT}"
 wait_for_http "${CUSTOM}" || die "${CUSTOM_NAME} did not start serving"
 assert_status 403 "user rule from rules.d blocks the request" \
   "${CUSTOM}" "/" -H "X-Test-Block: blockme"
@@ -368,7 +382,6 @@ assert_status 200 "user rule does not affect other traffic" "${CUSTOM}" "/"
 # always empty and every CRS RESPONSE-95x rule was inert.
 assert_status 403 "response body is inspected in phase 4" \
   "${CUSTOM}" "/" -H "X-Test-Response-Block: blockme"
-docker rm -f "${CUSTOM_NAME}" >/dev/null
 
 # ---------------------------------------------------------------------------
 # Audit logging
@@ -384,36 +397,39 @@ if [ "${VARIANT}" = "caddy" ]; then
     "default caddy log directory exists and is writable"
 fi
 
-read -r AUDIT_NAME AUDIT <<<"$(start_waf audit \
+start_waf audit \
   CORAZA_AUDIT_ENGINE=On \
-  CORAZA_AUDIT_LOG=/var/log/coraza/audit/audit.log)"
+  CORAZA_AUDIT_LOG=/var/log/coraza/audit/audit.log
+AUDIT_NAME="${WAF_NAME}"
+AUDIT="${WAF_ENDPOINT}"
 wait_for_http "${AUDIT}" || die "${AUDIT_NAME} did not start serving"
 curl -s -o /dev/null --max-time 10 \
   "http://${AUDIT}/?search=%3Cscript%3Ealert%281%29%3C%2Fscript%3E" || true
 assert_exec "${AUDIT_NAME}" \
   'test -s /var/log/coraza/audit/audit.log' \
   "serial audit log file is written on attack"
-docker rm -f "${AUDIT_NAME}" >/dev/null
 
-read -r CONC_NAME CONC <<<"$(start_waf concurrent-audit \
+start_waf concurrent-audit \
   CORAZA_AUDIT_ENGINE=On \
   CORAZA_AUDIT_LOG=/var/log/coraza/audit.log \
   CORAZA_AUDIT_LOG_TYPE=Concurrent \
-  CORAZA_AUDIT_STORAGE_DIR=/var/log/coraza/audit)"
+  CORAZA_AUDIT_STORAGE_DIR=/var/log/coraza/audit
+CONC_NAME="${WAF_NAME}"
+CONC="${WAF_ENDPOINT}"
 wait_for_http "${CONC}" || die "${CONC_NAME} did not start serving"
 curl -s -o /dev/null --max-time 10 \
   "http://${CONC}/?search=%3Cscript%3Ealert%281%29%3C%2Fscript%3E" || true
 assert_exec "${CONC_NAME}" \
   'find /var/log/coraza/audit -type f | grep -q .' \
   "concurrent audit log files are written on attack"
-docker rm -f "${CONC_NAME}" >/dev/null
 
-read -r CUSTOMDIR_NAME CUSTOMDIR <<<"$(start_waf custom-audit-dir \
-  CORAZA_AUDIT_STORAGE_DIR=/tmp/custom-audit-test)"
+start_waf custom-audit-dir \
+  CORAZA_AUDIT_STORAGE_DIR=/tmp/custom-audit-test
+CUSTOMDIR_NAME="${WAF_NAME}"
+CUSTOMDIR="${WAF_ENDPOINT}"
 wait_for_http "${CUSTOMDIR}" || die "${CUSTOMDIR_NAME} did not start serving"
 assert_exec "${CUSTOMDIR_NAME}" 'test -d /tmp/custom-audit-test' \
   "entrypoint creates a custom CORAZA_AUDIT_STORAGE_DIR"
-docker rm -f "${CUSTOMDIR_NAME}" >/dev/null
 
 # ---------------------------------------------------------------------------
 # Summary
