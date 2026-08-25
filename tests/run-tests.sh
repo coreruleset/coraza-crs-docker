@@ -44,11 +44,20 @@ while getopts ":v:i:bh" opt; do
 done
 
 # The CI matrix uses bake target names (caddy-alpine-latest, nginx-lts, ...);
-# accept those as-is and reduce them to the variant family.
+# accept those as-is. A full target name is what -b builds, so nginx-lts builds
+# the LTS image rather than the latest one; a bare family name builds -latest.
 case "${VARIANT}" in
-  caddy*) VARIANT="caddy" ; BAKE_TARGET="caddy-alpine-latest" ;;
-  nginx*) VARIANT="nginx" ; BAKE_TARGET="nginx-latest" ;;
-  apache*) VARIANT="apache" ; BAKE_TARGET="apache-latest" ;;
+  *-latest|*-lts) BAKE_TARGET="${VARIANT}" ;;
+  caddy*) BAKE_TARGET="caddy-alpine-latest" ;;
+  nginx*) BAKE_TARGET="nginx-latest" ;;
+  apache*) BAKE_TARGET="apache-latest" ;;
+esac
+
+# Everything else keys off the variant family.
+case "${VARIANT}" in
+  caddy*) VARIANT="caddy" ;;
+  nginx*) VARIANT="nginx" ;;
+  apache*) VARIANT="apache" ;;
   *) echo "Unknown variant: ${VARIANT}" >&2 ; usage 1 ;;
 esac
 
@@ -162,16 +171,20 @@ start_waf() {
     || die "could not read published port of ${name}"
 }
 
-# wait_for_http <host:port> — wait until the server answers anything at all.
+# wait_for_http <host:port> — wait until the server proxies a request to the
+# backend successfully. Answering at all is not enough: a WAF that is up before
+# its backend replies 502, and starting a group there would fail assertions
+# that have nothing wrong with them.
 wait_for_http() {
   local endpoint="$1"
   local deadline=$((SECONDS + STARTUP_TIMEOUT))
+  local code=""
   while [ "${SECONDS}" -lt "${deadline}" ]; do
-    if curl -s -o /dev/null --max-time 2 "http://${endpoint}/"; then
-      return 0
-    fi
+    code="$(status "${endpoint}" "/")"
+    [ "${code}" = "200" ] && return 0
     sleep 1
   done
+  printf 'last response from %s: HTTP %s\n' "${endpoint}" "${code}" >&2
   return 1
 }
 
