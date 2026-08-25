@@ -176,7 +176,16 @@ A self-signed certificate is generated automatically at startup if no certificat
 
 | Variable | Default | Description |
 | - | - | - |
-| `CORAZA_TAG` | `coraza` | Default tag for CRS rules |
+| `CORAZA_TAG` | `coraza` | **No longer applied.** See below. |
+
+`CORAZA_TAG` used to be interpolated into caddy's
+`CORAZA_DEFAULT_PHASE1_ACTION`/`CORAZA_DEFAULT_PHASE2_ACTION`, which put
+`tag:'coraza'` on every phase 1 and phase 2 CRS rule; nginx and Apache never
+used it. Recent Coraza rejects metadata actions in `SecDefaultAction`
+(`SecDefaultAction must not contain metadata actions`), so the tag had to go
+and the variable is now inert on all three variants. To tag rules, set the
+`tag` action on the rules themselves — for example with an override in
+`/opt/coraza/overrides` — or filter logs on the rule ids instead.
 
 ## Important Notes
 
