@@ -53,6 +53,7 @@ Examples:
   - [Configuration Files/Directories](#configuration-filesdirectories)
   - [Build Arguments](#build-arguments)
   - [Building](#building)
+  - [Testing](#testing)
   - [Advanced Configuration](#advanced-configuration)
 
 ## Quick Start
@@ -227,6 +228,54 @@ docker buildx bake -f docker-bake.hcl
 # Build a single target
 docker buildx bake -f docker-bake.hcl --set "*.platform=linux/amd64" nginx
 ```
+
+## Testing
+
+`tests/run-tests.sh` starts the image under test as a reverse proxy in front of a
+`traefik/whoami` backend and drives it with `curl`: legitimate traffic must be
+proxied through, attack payloads must be blocked by CRS, and the documented
+environment variables must actually change that behaviour. It is the same script
+the `Verify Images` workflow runs on every pull request.
+
+```bash
+# Build the caddy image and test it
+./tests/run-tests.sh -v caddy -b
+
+# Test an image that is already available locally
+./tests/run-tests.sh -v nginx -i ghcr.io/coreruleset/coraza-crs:nginx
+```
+
+Options:
+
+| Option | Description |
+| ------ | ----------- |
+| `-v <variant>` | Variant to test: `caddy`, `nginx` or `apache` (default: `caddy`). Bake target names such as `nginx-lts` are accepted too. |
+| `-i <image>` | Image to test (default: `coraza-crs-test:<variant>`). |
+| `-b` | Build the image with `docker buildx bake` before running the tests. |
+
+The script requires `docker` and `curl`, publishes containers on ephemeral
+localhost ports, and removes everything it started on exit. Container logs are
+dumped when a test fails. Every check runs; the script exits non-zero if any of
+them failed.
+
+What is covered:
+
+   * The container starts and keeps running.
+   * Legitimate requests (query string, urlencoded body, JSON body) are proxied
+     to the backend and answered with the backend's response.
+   * Attacks are blocked with `403`: XSS and SQL injection in the query string,
+     path traversal, RCE attempt, scanner user agent, SQL injection in a POST
+     body, XSS in a JSON body. A disallowed HTTP method is rejected too (`403`
+     from CRS, or `405` when the web server answers it first).
+   * `CORAZA_RULE_ENGINE=DetectionOnly` and `CORAZA_RULE_ENGINE=Off` let attacks
+     through.
+   * `ANOMALY_INBOUND` is applied to the rule set by `activate-rules.sh`.
+   * Custom rules mounted into `/opt/coraza/rules.d` are loaded and enforced,
+     including a phase 4 rule on `RESPONSE_BODY` — a guard against response
+     body inspection silently not running.
+   * Audit logging: default log directories, serial audit log written on attack,
+     concurrent audit log files written on attack, and creation of a custom
+     `CORAZA_AUDIT_STORAGE_DIR` by the entrypoint.
 
 ## Advanced Configuration
 
