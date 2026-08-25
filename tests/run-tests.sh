@@ -27,8 +27,9 @@ BACKEND_IMAGE="${BACKEND_IMAGE:-traefik/whoami}"
 # Seconds to wait for a container to start serving.
 STARTUP_TIMEOUT="${STARTUP_TIMEOUT:-60}"
 
+# usage [exit-code] — print the header comment of this script as help text.
 usage() {
-  sed -n '2,25p' "$0" | sed 's/^#\{1,2\} \{0,1\}//'
+  awk 'NR == 1 { next } /^#/ { sub(/^# ?/, ""); print; next } { exit }' "$0"
   exit "${1:-0}"
 }
 
@@ -82,15 +83,19 @@ else
   C_RED=""; C_GREEN=""; C_BLUE=""; C_OFF=""
 fi
 
+# group <title> — start a new group of checks in the output.
 group() {
   printf '\n%s==> %s%s\n' "${C_BLUE}" "$1" "${C_OFF}"
 }
 
+# pass <description> — record a successful check.
 pass() {
   TESTS_RUN=$((TESTS_RUN + 1))
   printf '%s  ok%s   %s\n' "${C_GREEN}" "${C_OFF}" "$1"
 }
 
+# fail <description> [details] — record a failed check and keep going, so a
+# run reports every problem instead of only the first one.
 fail() {
   TESTS_RUN=$((TESTS_RUN + 1))
   TESTS_FAILED=$((TESTS_FAILED + 1))
@@ -99,11 +104,14 @@ fail() {
   return 0
 }
 
+# die <message> — abort the run; the EXIT trap still cleans up.
 die() {
   printf '%sfatal:%s %s\n' "${C_RED}" "${C_OFF}" "$1" >&2
   exit 1
 }
 
+# cleanup — EXIT trap: dump container logs if the run failed, then remove
+# every container, the network and the temporary directory it created.
 cleanup() {
   local status=$?
   # On failure, dump the logs of every container we started: without them a red
