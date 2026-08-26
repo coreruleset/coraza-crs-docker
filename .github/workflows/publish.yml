@@ -82,10 +82,10 @@ jobs:
         env:
           METADATA: ${{ steps.build-and-push.outputs.metadata }}
         run: |
-          DIGEST=$(echo ${METADATA} | jq -r '.[] | ."containerimage.digest"')
-          TAGS=$(echo ${METADATA} | jq -r '.[] | ."image.name" | tostring' | tr ',' '\n')
-          images=""
+          DIGEST=$(jq -r '.[] | objects | ."containerimage.digest"' <<<"${METADATA}")
+          TAGS=$(jq -r '.[] | objects | ."image.name"' <<<"${METADATA}" | tr ',' '\n')
+          images=()
           for tag in ${TAGS}; do
-            images+="${tag}@${DIGEST} "
+            images+=("${tag}@${DIGEST}")
           done
-          cosign sign --yes ${images}
+          cosign sign --yes "${images[@]}"
