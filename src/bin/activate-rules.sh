@@ -114,6 +114,10 @@ if [ -n "${CORAZA_DEFAULT_PHASE2_ACTION}" ]; then
 fi
 
 # Substitute CORAZA_TAG
+# No-op as things stand: caddy's default phase 1/2 actions were the only thing
+# that put a literal ${CORAZA_TAG} in crs-setup.conf, and they no longer can —
+# Coraza rejects metadata actions such as tag in SecDefaultAction. Kept for
+# configurations that still carry the placeholder.
 if [ -n "${CORAZA_TAG}" ]; then
   sed -z -E -i "s/\\$\{CORAZA_TAG\}/${CORAZA_TAG}/g" "${setup_conf_path}"
 fi
