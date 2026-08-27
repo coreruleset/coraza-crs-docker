@@ -17,12 +17,12 @@ variable "crs-versions" {
 
 variable "caddy-version" {
     # renovate: depName=caddy datasource=docker
-    default = "2.11.3"
+    default = "2.11.4"
 }
 
 variable "coraza-version" {
     # renovate: depName=corazawaf/coraza-caddy datasource=github-releases
-    default = "v2.5.0"
+    default = "v2.6.0"
 }
 
 variable "golang-version" {
