@@ -20,7 +20,7 @@ variable "caddy-version" {
     default = "2.11.3"
 }
 
-variable "coraza-version" {
+variable "coraza-caddy-version" {
     # renovate: depName=corazawaf/coraza-caddy datasource=github-releases
     default = "v2.5.0"
 }
@@ -120,7 +120,7 @@ target "platforms-base" {
     }
     args = {
         CADDY_VERSION = "${caddy-version}"
-        CORAZA_VERSION = "${coraza-version}"
+        CORAZA_CADDY_VERSION = "${coraza-caddy-version}"
     }
 }
 

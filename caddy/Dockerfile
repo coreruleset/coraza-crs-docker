@@ -6,13 +6,13 @@ FROM caddy:${CADDY_VERSION}-builder AS builder-caddy
 
 # Set coraza-caddy release tag to build against
 # Available tags are on the GitHub releases page here: https://github.com/corazawaf/coraza-caddy/tags
-ARG CORAZA_VERSION="n/a"
+ARG CORAZA_CADDY_VERSION="n/a"
 
 # Build Caddy with Coraza
 # The module path must carry the /v2 suffix: without it Go resolves the v1
-# module (coraza-caddy v1.2.2), whatever CORAZA_VERSION says.
+# module (coraza-caddy v1.2.2), whatever CORAZA_CADDY_VERSION says.
 RUN --mount=type=cache,target=/go,id=caddy \
-  xcaddy build --with github.com/corazawaf/coraza-caddy/v2@${CORAZA_VERSION}
+  xcaddy build --with github.com/corazawaf/coraza-caddy/v2@${CORAZA_CADDY_VERSION}
 
 # Use official caddy builder image to get Core Rule Set
 FROM caddy:${CADDY_VERSION}-builder AS builder-crs

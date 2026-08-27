@@ -30,7 +30,7 @@ services:
         # renovate: depName=caddy datasource=docker
         CADDY_VERSION: "2.11.3"
         # renovate: depName=corazawaf/coraza-caddy datasource=github-releases
-        CORAZA_VERSION: "v2.5.0"
+        CORAZA_CADDY_VERSION: "v2.5.0"
     depends_on:
       - whoami
     networks:
