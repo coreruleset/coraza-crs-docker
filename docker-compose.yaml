@@ -30,7 +30,7 @@ services:
         # renovate: depName=caddy datasource=docker
         CADDY_VERSION: "2.11.4"
         # renovate: depName=corazawaf/coraza-caddy datasource=github-releases
-        CORAZA_CADDY_VERSION: "v2.5.0"
+        CORAZA_CADDY_VERSION: "v2.6.0"
     depends_on:
       - whoami
     networks:
@@ -53,9 +53,9 @@ services:
         # renovate: depName=golang datasource=docker
         GOLANG_VERSION: "1.25"
         # renovate: depName=corazawaf/libcoraza datasource=github-releases
-        LIBCORAZA_VERSION: "v1.6.0"
+        LIBCORAZA_VERSION: "v1.7.0"
         # renovate: depName=corazawaf/coraza-nginx datasource=github-releases
-        CORAZA_NGINX_VERSION: "0.20.0"
+        CORAZA_NGINX_VERSION: "0.20.1"
         # renovate: depName=nginxinc/nginx-unprivileged datasource=docker
         NGINX_VERSION: "1.30.4"
     depends_on:
@@ -81,9 +81,9 @@ services:
         # renovate: depName=golang datasource=docker
         GOLANG_VERSION: "1.25"
         # renovate: depName=corazawaf/libcoraza datasource=github-releases
-        LIBCORAZA_VERSION: "v1.6.0"
+        LIBCORAZA_VERSION: "v1.7.0"
         # renovate: depName=corazawaf/coraza-apache datasource=github-releases
-        CORAZA_APACHE_VERSION: "0.3.0"
+        CORAZA_APACHE_VERSION: "0.20.0"
         # renovate: depName=httpd datasource=docker
         HTTPD_VERSION: "2.4"
     depends_on:

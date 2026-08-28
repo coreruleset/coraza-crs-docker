@@ -218,10 +218,10 @@ The following configuration paths are shared across all variants:
 | `CADDY_VERSION` | `2.11.4` | Caddy Docker tag (caddy variant) |
 | `NGINX_VERSION` | `1.30.4` | nginx image version (nginx variant) |
 | `HTTPD_VERSION` | `2.4` | httpd image version (apache variant) |
-| `LIBCORAZA_VERSION` | `v1.6.0` | libcoraza release (nginx/apache variants) |
-| `CORAZA_CADDY_VERSION` | `v2.5.0` | coraza-caddy release (caddy variant) |
-| `CORAZA_NGINX_VERSION` | `0.20.0` | coraza-nginx release (nginx variant) |
-| `CORAZA_APACHE_VERSION` | `0.3.0` | coraza-apache release (apache variant) |
+| `LIBCORAZA_VERSION` | `v1.7.0` | libcoraza release (nginx/apache variants) |
+| `CORAZA_CADDY_VERSION` | `v2.6.0` | coraza-caddy release (caddy variant) |
+| `CORAZA_NGINX_VERSION` | `0.20.1` | coraza-nginx release (nginx variant) |
+| `CORAZA_APACHE_VERSION` | `0.20.0` | coraza-apache release (apache variant) |
 
 ## Building
 
