@@ -115,6 +115,13 @@
   ],
   "packageRules": [
     {
+      "description": "first-party corazawaf releases skip the release-age delay",
+      "matchPackageNames": [
+        "corazawaf/**"
+      ],
+      "minimumReleaseAge": null
+    },
+    {
       "description": "compose, the README and the bake lts tag track the CRS v4 LTS line",
       "matchDepNames": [
         "coreruleset-v4-lts"
