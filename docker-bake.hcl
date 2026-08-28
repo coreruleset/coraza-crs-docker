@@ -17,10 +17,10 @@ variable "crs-versions" {
 
 variable "caddy-version" {
     # renovate: depName=caddy datasource=docker
-    default = "2.11.3"
+    default = "2.11.4"
 }
 
-variable "coraza-version" {
+variable "coraza-caddy-version" {
     # renovate: depName=corazawaf/coraza-caddy datasource=github-releases
     default = "v2.5.0"
 }
@@ -120,7 +120,7 @@ target "platforms-base" {
     }
     args = {
         CADDY_VERSION = "${caddy-version}"
-        CORAZA_VERSION = "${coraza-version}"
+        CORAZA_CADDY_VERSION = "${coraza-caddy-version}"
     }
 }
 

@@ -5,10 +5,11 @@
   ],
   "customManagers": [
     {
-      "description": "Bake file",
+      "description": "Bake file and compose build args",
       "customType": "regex",
       "managerFilePatterns": [
-        "/^docker-bake\\.hcl$/"
+        "/^docker-bake\\.hcl$/",
+        "/^docker-compose\\.yaml$/"
       ],
       "matchStrings": [
         "depName=(?<depName>[^\\s]+)(?:\\s+packageName=(?<packageName>[^\\s]+))?\\s+datasource=(?<datasource>[^\\s]+)\\s+[^\"]+\"(?<currentValue>[^\"]+)\""

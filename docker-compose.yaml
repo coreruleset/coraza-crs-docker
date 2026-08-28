@@ -28,9 +28,9 @@ services:
         # renovate: depName=coreruleset/coreruleset datasource=github-releases
         CRS_VERSION: "4.25.0"
         # renovate: depName=caddy datasource=docker
-        CADDY_VERSION: "2.11.2"
+        CADDY_VERSION: "2.11.4"
         # renovate: depName=corazawaf/coraza-caddy datasource=github-releases
-        CORAZA_VERSION: "v2.5.0"
+        CORAZA_CADDY_VERSION: "v2.5.0"
     depends_on:
       - whoami
     networks:
@@ -83,7 +83,7 @@ services:
         # renovate: depName=corazawaf/libcoraza datasource=github-releases
         LIBCORAZA_VERSION: "v1.6.0"
         # renovate: depName=corazawaf/coraza-apache datasource=github-releases
-        CORAZA_APACHE_VERSION: "0.0.1"
+        CORAZA_APACHE_VERSION: "0.3.0"
         # renovate: depName=httpd datasource=docker
         HTTPD_VERSION: "2.4"
     depends_on:
