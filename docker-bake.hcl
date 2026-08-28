@@ -6,7 +6,7 @@ variable "crs-version" {
 
 variable "v4-lts-crs-version" {
     # renovate: depName=coreruleset-v4-lts packageName=coreruleset/coreruleset datasource=github-releases
-    default = "4.25.0"
+    default = "4.25.1"
 }
 
 variable "crs-versions" {
