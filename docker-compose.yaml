@@ -25,7 +25,7 @@ services:
       context: .
       dockerfile: caddy/Dockerfile
       args:
-        # renovate: depName=coreruleset/coreruleset datasource=github-releases
+        # CRS v4 LTS line, bumped by hand like v4-lts-crs-version in docker-bake.hcl
         CRS_VERSION: "4.25.0"
         # renovate: depName=caddy datasource=docker
         CADDY_VERSION: "2.11.4"
@@ -48,7 +48,7 @@ services:
       context: .
       dockerfile: nginx/Dockerfile
       args:
-        # renovate: depName=coreruleset/coreruleset datasource=github-releases
+        # CRS v4 LTS line, bumped by hand like v4-lts-crs-version in docker-bake.hcl
         CRS_VERSION: "4.25.0"
         # renovate: depName=golang datasource=docker
         GOLANG_VERSION: "1.25"
@@ -76,7 +76,7 @@ services:
       context: .
       dockerfile: apache/Dockerfile
       args:
-        # renovate: depName=coreruleset/coreruleset datasource=github-releases
+        # CRS v4 LTS line, bumped by hand like v4-lts-crs-version in docker-bake.hcl
         CRS_VERSION: "4.25.0"
         # renovate: depName=golang datasource=docker
         GOLANG_VERSION: "1.25"

@@ -36,7 +36,7 @@ RUN set -eux; \
 ## Stage 2: Build nginx module
 FROM nginx:${NGINX_VERSION} AS nginx-builder
 
-ARG NGINX_VERSION="n/a"
+ARG NGINX_VERSION
 ARG CORAZA_NGINX_VERSION="n/a"
 
 USER root

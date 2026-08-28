@@ -22,21 +22,81 @@
         "/^README\\.md$/"
       ],
       "matchStrings": [
-        ".*on Caddy (?<currentValue>\\d+\\.\\d+\\.\\d+)"
+        "\\| `CADDY_VERSION` \\| `(?<currentValue>[^`]+)`"
       ],
       "depNameTemplate": "caddy",
       "datasourceTemplate": "docker"
     },
     {
-      "description": "Docs: CRS",
+      "description": "Docs: nginx",
       "customType": "regex",
       "managerFilePatterns": [
         "/^README\\.md$/"
       ],
       "matchStrings": [
-        "OWASP CRS (?<currentValue>\\d+\\.\\d+\\.\\d+)"
+        "\\| `NGINX_VERSION` \\| `(?<currentValue>[^`]+)`"
       ],
-      "depNameTemplate": "coreruleset/coreruleset",
+      "depNameTemplate": "nginxinc/nginx-unprivileged",
+      "datasourceTemplate": "docker"
+    },
+    {
+      "description": "Docs: httpd",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^README\\.md$/"
+      ],
+      "matchStrings": [
+        "\\| `HTTPD_VERSION` \\| `(?<currentValue>[^`]+)`"
+      ],
+      "depNameTemplate": "httpd",
+      "datasourceTemplate": "docker"
+    },
+    {
+      "description": "Docs: libcoraza",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^README\\.md$/"
+      ],
+      "matchStrings": [
+        "\\| `LIBCORAZA_VERSION` \\| `(?<currentValue>[^`]+)`"
+      ],
+      "depNameTemplate": "corazawaf/libcoraza",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "description": "Docs: coraza-caddy",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^README\\.md$/"
+      ],
+      "matchStrings": [
+        "\\| `CORAZA_CADDY_VERSION` \\| `(?<currentValue>[^`]+)`"
+      ],
+      "depNameTemplate": "corazawaf/coraza-caddy",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "description": "Docs: coraza-nginx",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^README\\.md$/"
+      ],
+      "matchStrings": [
+        "\\| `CORAZA_NGINX_VERSION` \\| `(?<currentValue>[^`]+)`"
+      ],
+      "depNameTemplate": "corazawaf/coraza-nginx",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "description": "Docs: coraza-apache",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^README\\.md$/"
+      ],
+      "matchStrings": [
+        "\\| `CORAZA_APACHE_VERSION` \\| `(?<currentValue>[^`]+)`"
+      ],
+      "depNameTemplate": "corazawaf/coraza-apache",
       "datasourceTemplate": "github-releases"
     }
   ],
