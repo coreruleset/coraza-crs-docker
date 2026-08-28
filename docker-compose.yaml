@@ -55,7 +55,7 @@ services:
         # renovate: depName=corazawaf/libcoraza datasource=github-releases
         LIBCORAZA_VERSION: "v1.6.0"
         # renovate: depName=corazawaf/coraza-nginx datasource=github-releases
-        CORAZA_NGINX_VERSION: "0.11.4"
+        CORAZA_NGINX_VERSION: "0.20.0"
         # renovate: depName=nginxinc/nginx-unprivileged datasource=docker
         NGINX_VERSION: "1.30.4"
     depends_on:

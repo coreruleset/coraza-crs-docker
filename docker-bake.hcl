@@ -1,7 +1,7 @@
 # docker-bake.hcl
 variable "crs-version" {
     # renovate: depName=coreruleset/coreruleset datasource=github-releases
-    default = "4.28.0"
+    default = "4.29.0"
 }
 
 variable "v4-lts-crs-version" {
@@ -38,7 +38,7 @@ variable "libcoraza-version" {
 
 variable "coraza-nginx-version" {
     # renovate: depName=corazawaf/coraza-nginx datasource=github-releases
-    default = "0.11.4"
+    default = "0.20.0"
 }
 
 variable "coraza-apache-version" {
