@@ -214,7 +214,7 @@ The following configuration paths are shared across all variants:
 
 | Variable | Default | Description |
 | -------- | ------- | ----------- |
-| `CRS_VERSION` | `4.25.0` | OWASP CRS release version (LTS) |
+| `CRS_VERSION` | `4.25.1` | OWASP CRS release version (LTS) |
 | `CADDY_VERSION` | `2.11.4` | Caddy Docker tag (caddy variant) |
 | `NGINX_VERSION` | `1.30.4` | nginx image version (nginx variant) |
 | `HTTPD_VERSION` | `2.4` | httpd image version (apache variant) |
