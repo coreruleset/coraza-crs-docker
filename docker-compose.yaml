@@ -83,7 +83,7 @@ services:
         # renovate: depName=corazawaf/libcoraza datasource=github-releases
         LIBCORAZA_VERSION: "v1.7.0"
         # renovate: depName=corazawaf/coraza-apache datasource=github-releases
-        CORAZA_APACHE_VERSION: "0.20.0"
+        CORAZA_APACHE_VERSION: "0.20.1"
         # renovate: depName=httpd datasource=docker
         HTTPD_VERSION: "2.4"
     depends_on:
