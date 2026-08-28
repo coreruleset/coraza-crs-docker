@@ -23,7 +23,7 @@ variable "caddy-version" {
 
 variable "coraza-caddy-version" {
     # renovate: depName=corazawaf/coraza-caddy datasource=github-releases
-    default = "v2.5.0"
+    default = "v2.6.0"
 }
 
 variable "golang-version" {
@@ -33,17 +33,17 @@ variable "golang-version" {
 
 variable "libcoraza-version" {
     # renovate: depName=corazawaf/libcoraza datasource=github-releases
-    default = "v1.6.0"
+    default = "v1.7.0"
 }
 
 variable "coraza-nginx-version" {
     # renovate: depName=corazawaf/coraza-nginx datasource=github-releases
-    default = "0.20.0"
+    default = "0.20.1"
 }
 
 variable "coraza-apache-version" {
     # renovate: depName=corazawaf/coraza-apache datasource=github-releases
-    default = "0.3.0"
+    default = "0.20.0"
 }
 
 variable "nginx-version" {
