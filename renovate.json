@@ -16,6 +16,19 @@
       ]
     },
     {
+      "description": "Docs: CRS v4 LTS",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^README\\.md$/"
+      ],
+      "matchStrings": [
+        "\\| `CRS_VERSION` \\| `(?<currentValue>[^`]+)`"
+      ],
+      "depNameTemplate": "coreruleset-v4-lts",
+      "packageNameTemplate": "coreruleset/coreruleset",
+      "datasourceTemplate": "github-releases"
+    },
+    {
       "description": "Docs: caddy",
       "customType": "regex",
       "managerFilePatterns": [
@@ -102,9 +115,22 @@
   ],
   "packageRules": [
     {
+      "description": "compose, the README and the bake lts tag track the CRS v4 LTS line",
+      "matchDepNames": [
+        "coreruleset-v4-lts"
+      ],
+      "allowedVersions": ">=4.25.0 <4.26.0",
+      "groupName": "CRS v4 LTS updates"
+    },
+    {
       "description": "nginx uses odd minors for mainline and even minors for stable; only track stable",
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["nginx", "nginxinc/nginx-unprivileged"],
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "nginx",
+        "nginxinc/nginx-unprivileged"
+      ],
       "allowedVersions": "/^\\d+\\.\\d*[02468]\\.\\d+$/"
     }
   ]
