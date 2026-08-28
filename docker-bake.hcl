@@ -17,7 +17,7 @@ variable "crs-versions" {
 
 variable "caddy-version" {
     # renovate: depName=caddy datasource=docker
-    default = "2.11.3"
+    default = "2.11.4"
 }
 
 variable "coraza-caddy-version" {

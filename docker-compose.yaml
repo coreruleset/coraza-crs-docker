@@ -28,7 +28,7 @@ services:
         # renovate: depName=coreruleset/coreruleset datasource=github-releases
         CRS_VERSION: "4.25.0"
         # renovate: depName=caddy datasource=docker
-        CADDY_VERSION: "2.11.3"
+        CADDY_VERSION: "2.11.4"
         # renovate: depName=corazawaf/coraza-caddy datasource=github-releases
         CORAZA_CADDY_VERSION: "v2.5.0"
     depends_on:
