@@ -16,35 +16,121 @@
       ]
     },
     {
+      "description": "Docs: CRS v4 LTS",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^README\\.md$/"
+      ],
+      "matchStrings": [
+        "\\| `CRS_VERSION` \\| `(?<currentValue>[^`]+)`"
+      ],
+      "depNameTemplate": "coreruleset-v4-lts",
+      "packageNameTemplate": "coreruleset/coreruleset",
+      "datasourceTemplate": "github-releases"
+    },
+    {
       "description": "Docs: caddy",
       "customType": "regex",
       "managerFilePatterns": [
         "/^README\\.md$/"
       ],
       "matchStrings": [
-        ".*on Caddy (?<currentValue>\\d+\\.\\d+\\.\\d+)"
+        "\\| `CADDY_VERSION` \\| `(?<currentValue>[^`]+)`"
       ],
       "depNameTemplate": "caddy",
       "datasourceTemplate": "docker"
     },
     {
-      "description": "Docs: CRS",
+      "description": "Docs: nginx",
       "customType": "regex",
       "managerFilePatterns": [
         "/^README\\.md$/"
       ],
       "matchStrings": [
-        "OWASP CRS (?<currentValue>\\d+\\.\\d+\\.\\d+)"
+        "\\| `NGINX_VERSION` \\| `(?<currentValue>[^`]+)`"
       ],
-      "depNameTemplate": "coreruleset/coreruleset",
+      "depNameTemplate": "nginxinc/nginx-unprivileged",
+      "datasourceTemplate": "docker"
+    },
+    {
+      "description": "Docs: httpd",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^README\\.md$/"
+      ],
+      "matchStrings": [
+        "\\| `HTTPD_VERSION` \\| `(?<currentValue>[^`]+)`"
+      ],
+      "depNameTemplate": "httpd",
+      "datasourceTemplate": "docker"
+    },
+    {
+      "description": "Docs: libcoraza",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^README\\.md$/"
+      ],
+      "matchStrings": [
+        "\\| `LIBCORAZA_VERSION` \\| `(?<currentValue>[^`]+)`"
+      ],
+      "depNameTemplate": "corazawaf/libcoraza",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "description": "Docs: coraza-caddy",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^README\\.md$/"
+      ],
+      "matchStrings": [
+        "\\| `CORAZA_CADDY_VERSION` \\| `(?<currentValue>[^`]+)`"
+      ],
+      "depNameTemplate": "corazawaf/coraza-caddy",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "description": "Docs: coraza-nginx",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^README\\.md$/"
+      ],
+      "matchStrings": [
+        "\\| `CORAZA_NGINX_VERSION` \\| `(?<currentValue>[^`]+)`"
+      ],
+      "depNameTemplate": "corazawaf/coraza-nginx",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "description": "Docs: coraza-apache",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^README\\.md$/"
+      ],
+      "matchStrings": [
+        "\\| `CORAZA_APACHE_VERSION` \\| `(?<currentValue>[^`]+)`"
+      ],
+      "depNameTemplate": "corazawaf/coraza-apache",
       "datasourceTemplate": "github-releases"
     }
   ],
   "packageRules": [
     {
+      "description": "compose, the README and the bake lts tag track the CRS v4 LTS line",
+      "matchDepNames": [
+        "coreruleset-v4-lts"
+      ],
+      "allowedVersions": ">=4.25.0 <4.26.0",
+      "groupName": "CRS v4 LTS updates"
+    },
+    {
       "description": "nginx uses odd minors for mainline and even minors for stable; only track stable",
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["nginx", "nginxinc/nginx-unprivileged"],
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "nginx",
+        "nginxinc/nginx-unprivileged"
+      ],
       "allowedVersions": "/^\\d+\\.\\d*[02468]\\.\\d+$/"
     }
   ]
