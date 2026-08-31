@@ -3,10 +3,7 @@ on:
     branches:
       - main
 
-permissions:
-  contents: write
-  pull-requests: write
-  issues: write
+permissions: {}
 
 name: release-please
 
@@ -14,8 +11,20 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app-token
+        with:
+          app-id: ${{ secrets.RELEASE_PLEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_PLEASE_APP_PRIVATE_KEY }}
+          # Narrow the blanket installation permissions to what release-please
+          # needs: commits and the release branch, the release PR, its labels.
+          permission-contents: write
+          permission-pull-requests: write
+          permission-issues: write
+
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5
         with:
-          # this is not recommended, but we don't run any actions on release
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # An app token, not GITHUB_TOKEN: Actions is not allowed to open PRs,
+          # and a GITHUB_TOKEN-created PR would not trigger verifyimage.yml.
+          token: ${{ steps.app-token.outputs.token }}
           release-type: simple
