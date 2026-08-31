@@ -38,12 +38,12 @@ variable "libcoraza-version" {
 
 variable "coraza-nginx-version" {
     # renovate: depName=corazawaf/coraza-nginx datasource=github-releases
-    default = "0.20.1"
+    default = "0.21.0"
 }
 
 variable "coraza-apache-version" {
     # renovate: depName=corazawaf/coraza-apache datasource=github-releases
-    default = "0.20.1"
+    default = "0.21.0"
 }
 
 variable "nginx-version" {
