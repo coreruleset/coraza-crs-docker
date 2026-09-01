@@ -1,0 +1,68 @@
+# Cut a date-based release (CalVer, YYYYMMDD) and let publish.yml build the image.
+#
+# The repo has always tagged by date (20260828, 202608261, ...). release-please
+# is a SemVer tool and cannot emit those tags, so releases are cut here instead:
+# a manual dispatch creates a GitHub Release whose tag is today's UTC date, with
+# a numeric suffix on a same-day re-release (20260901 -> 202609011 -> 202609012).
+#
+# publish.yml triggers on `release: [published]`. A release created with the
+# default GITHUB_TOKEN would NOT trigger it, so this uses the same GitHub App
+# token as the old release-please workflow.
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Override tag (default: today's UTC date, YYYYMMDD). Must not already exist."
+        required: false
+        type: string
+
+permissions: {}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app-token
+        with:
+          client-id: ${{ secrets.RELEASE_PLEASE_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_PLEASE_APP_PRIVATE_KEY }}
+          # Only what cutting a release needs: create the tag + the release.
+          permission-contents: write
+
+      - name: Create date-based release
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          OVERRIDE: ${{ inputs.tag }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          # A tag "exists" if there is a release or a git tag ref for it.
+          exists() {
+            gh release view "$1" >/dev/null 2>&1 \
+              || gh api "repos/${GH_REPO}/git/ref/tags/$1" >/dev/null 2>&1
+          }
+
+          if [ -n "${OVERRIDE}" ]; then
+            tag="${OVERRIDE}"
+            if exists "${tag}"; then
+              echo "::error::tag ${tag} already exists"; exit 1
+            fi
+          else
+            base="$(date -u +%Y%m%d)"
+            tag="${base}"; n=1
+            while exists "${tag}"; do
+              tag="${base}${n}"; n=$((n + 1))
+            done
+          fi
+
+          echo "Cutting release ${tag} at ${SHA}"
+          # Publishing the release (not a draft) fires publish.yml.
+          gh release create "${tag}" \
+            --target "${SHA}" \
+            --title "${tag}" \
+            --generate-notes
