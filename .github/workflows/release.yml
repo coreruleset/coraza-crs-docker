@@ -20,6 +20,11 @@ on:
 
 permissions: {}
 
+# Serialize release runs so two dispatches can't allocate the same tag.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -41,21 +46,30 @@ jobs:
         run: |
           set -euo pipefail
 
-          # A tag "exists" if there is a release or a git tag ref for it.
-          exists() {
-            gh release view "$1" >/dev/null 2>&1 \
-              || gh api "repos/${GH_REPO}/git/ref/tags/$1" >/dev/null 2>&1
+          # 0 = the tag exists; 1 = confirmed absent (HTTP 404). Any other
+          # failure (network, rate limit, auth) aborts the job -- a lookup we
+          # can't complete must never be mistaken for "tag is free".
+          tag_taken() {
+            local out
+            if out="$(gh api "repos/${GH_REPO}/git/ref/tags/$1" 2>&1)"; then
+              return 0
+            fi
+            if printf '%s\n' "$out" | grep -qiE 'HTTP 404|Not Found'; then
+              return 1
+            fi
+            echo "::error::tag lookup for '$1' failed: ${out}"
+            exit 1
           }
 
           if [ -n "${OVERRIDE}" ]; then
             tag="${OVERRIDE}"
-            if exists "${tag}"; then
+            if tag_taken "${tag}"; then
               echo "::error::tag ${tag} already exists"; exit 1
             fi
           else
             base="$(date -u +%Y%m%d)"
             tag="${base}"; n=1
-            while exists "${tag}"; do
+            while tag_taken "${tag}"; do
               tag="${base}${n}"; n=$((n + 1))
             done
           fi
