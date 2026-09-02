@@ -1,9 +1,11 @@
 # Cut a date-based release (CalVer, YYYYMMDD) and let publish.yml build the image.
 #
 # The repo has always tagged by date (20260828, 202608261, ...). release-please
-# is a SemVer tool and cannot emit those tags, so releases are cut here instead:
-# a manual dispatch creates a GitHub Release whose tag is today's UTC date, with
-# a numeric suffix on a same-day re-release (20260901 -> 202609011 -> 202609012).
+# is a SemVer tool and cannot emit those tags, so releases are cut here instead.
+# The tag is today's UTC date, with a numeric suffix on a same-day re-release
+# (20260901 -> 202609011 -> 202609012). Two triggers: a manual dispatch, and an
+# automatic run when Renovate merges a PR touching image-affecting files (so the
+# image tracks its bundled deps without a manual cut).
 #
 # publish.yml triggers on `release: [published]`. A release created with the
 # default GITHUB_TOKEN would NOT trigger it, so this uses the same GitHub App
@@ -17,6 +19,16 @@ on:
         description: "Override tag (default: today's UTC date, YYYYMMDD). Must not already exist."
         required: false
         type: string
+  # Auto-cut a release when Renovate merges a PR that changes what ships in the
+  # image. The paths filter limits it to image-affecting files, so CI-only
+  # Renovate bumps (GitHub Actions, README version tables) do not release; the
+  # job `if:` below further restricts it to a *merged* Renovate PR.
+  pull_request:
+    types: [closed]
+    paths:
+      - docker-bake.hcl
+      - docker-compose.yaml
+      - "**/Dockerfile"
 
 permissions: {}
 
@@ -28,6 +40,12 @@ concurrency:
 jobs:
   release:
     runs-on: ubuntu-latest
+    # Manual dispatch always runs; a pull_request run only proceeds for a merged
+    # Renovate PR (a closed-but-not-merged PR, or anyone else's, is ignored).
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       github.event.pull_request.user.login == 'renovate[bot]')
     steps:
       - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         id: app-token
@@ -42,7 +60,9 @@ jobs:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           GH_REPO: ${{ github.repository }}
           OVERRIDE: ${{ inputs.tag }}
-          SHA: ${{ github.sha }}
+          # On a merged PR, tag the merge commit on main (github.sha would be the
+          # PR head); on manual dispatch, github.sha is main's tip.
+          SHA: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
         run: |
           set -euo pipefail
 
