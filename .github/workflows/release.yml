@@ -40,11 +40,14 @@ concurrency:
 jobs:
   release:
     runs-on: ubuntu-latest
-    # Manual dispatch always runs; a pull_request run only proceeds for a merged
-    # Renovate PR (a closed-but-not-merged PR, or anyone else's, is ignored).
+    # Only ever release from main: a manual dispatch must be on main (the UI/CLI
+    # let you pick any branch), and a Renovate PR must have targeted main. Never
+    # tag/publish an image from a feature or PR branch.
     if: >-
-      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_dispatch' &&
+       github.ref == 'refs/heads/main') ||
       (github.event.pull_request.merged == true &&
+       github.event.pull_request.base.ref == 'main' &&
        github.event.pull_request.user.login == 'renovate[bot]')
     steps:
       - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
