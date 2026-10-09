@@ -219,9 +219,9 @@ The following configuration paths are shared across all variants:
 | `NGINX_VERSION` | `1.30.4` | nginx image version (nginx variant) |
 | `HTTPD_VERSION` | `2.4` | httpd image version (apache variant) |
 | `LIBCORAZA_VERSION` | `v1.8.0` | libcoraza release (nginx/apache variants) |
-| `CORAZA_CADDY_VERSION` | `v2.6.1` | coraza-caddy release (caddy variant) |
-| `CORAZA_NGINX_VERSION` | `0.21.0` | coraza-nginx release (nginx variant) |
-| `CORAZA_APACHE_VERSION` | `0.21.0` | coraza-apache release (apache variant) |
+| `CORAZA_CADDY_VERSION` | `v2.6.2` | coraza-caddy release (caddy variant) |
+| `CORAZA_NGINX_VERSION` | `0.22.0` | coraza-nginx release (nginx variant) |
+| `CORAZA_APACHE_VERSION` | `0.22.0` | coraza-apache release (apache variant) |
 
 ## Building
 
