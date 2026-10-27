@@ -18,7 +18,7 @@ variable "crs-versions" {
 
 variable "caddy-version" {
     # renovate: depName=caddy datasource=docker
-    default = "2.11.4"
+    default = "2.11.6"
 }
 
 variable "coraza-caddy-version" {
@@ -38,7 +38,7 @@ variable "libcoraza-version" {
 
 variable "coraza-nginx-version" {
     # renovate: depName=corazawaf/coraza-nginx datasource=github-releases
-    default = "0.22.0"
+    default = "0.23.0"
 }
 
 variable "coraza-apache-version" {
@@ -48,7 +48,7 @@ variable "coraza-apache-version" {
 
 variable "nginx-version" {
     # renovate: depName=nginxinc/nginx-unprivileged datasource=docker
-    default = "1.30.4"
+    default = "1.30.6"
 }
 
 variable "httpd-version" {
