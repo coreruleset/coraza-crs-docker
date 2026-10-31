@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-ARG NGINX_VERSION="1.30.5@sha256:9bf97bd7714f5e24c1ccd545ecb9eb5435cb6d109c97cebb15e7e455e0239edb"
+ARG NGINX_VERSION="1.30.6@sha256:ec0f7ecb1fbd84959ac114e65fb36074ffc97d4d51db0f18ee925162d889dcef"
 ARG GOLANG_VERSION="1.27@sha256:3680233e3204827fbdc66088528ae6d4b3d034f51d03a99d454f6de034888244"
 
 ## Stage 1: Build libcoraza from source
