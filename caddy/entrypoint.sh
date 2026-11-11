@@ -11,15 +11,42 @@ mkdir -p "${CORAZA_TMP_DIR:-/tmp/coraza}" \
 
 echo "Generating configuration files..."
 
-# Map ERRORLOG to a Caddy log writer. /dev/stderr and /dev/stdout use Caddy's
-# own stderr/stdout writers: its file writer rolls the file at 100 MB by
-# default, which must not happen to a device. Anything else is a file path.
-case "${ERRORLOG:-/dev/stderr}" in
+# Map ERRORLOG to a Caddy log writer (the global log block in the Caddyfile).
+# Caddy's file writer rolls the file at 100 MB by default and creates it with
+# mode 0600, so:
+# - /dev/stderr, /dev/stdout and /dev/null use Caddy's stderr, stdout and
+#   discard writers.
+# - Any other device or /proc path (e.g. /proc/self/fd/2) is written as a file
+#   with rolling disabled: a device must never be renamed.
+# - A regular file is created with mode 0644, like nginx and Apache error logs,
+#   so tools reading it from a bind mount (e.g. go-ftw) can open it. With
+#   CRS_ENABLE_TEST_MARKER=1 rolling is disabled too: a roll in the middle of a
+#   go-ftw run hides every later log line from it.
+# The path is quoted so that it may contain spaces.
+ERRORLOG="${ERRORLOG:-/dev/stderr}"
+case "${ERRORLOG}" in
   /dev/stderr) CADDY_ERRORLOG_OUTPUT="stderr" ;;
   /dev/stdout) CADDY_ERRORLOG_OUTPUT="stdout" ;;
-  *) CADDY_ERRORLOG_OUTPUT="file ${ERRORLOG}" ;;
+  /dev/null) CADDY_ERRORLOG_OUTPUT="discard" ;;
+  /dev/*|/proc/*)
+    CADDY_ERRORLOG_OUTPUT="$(printf 'file "%s" {\n  roll_disabled\n}' "${ERRORLOG}")" ;;
+  *)
+    errorlog_roll=""
+    if [ "${CRS_ENABLE_TEST_MARKER:-0}" = "1" ]; then
+      errorlog_roll="roll_disabled"
+    fi
+    CADDY_ERRORLOG_OUTPUT="$(printf 'file "%s" {\n  mode 0644\n  %s\n}' "${ERRORLOG}" "${errorlog_roll}")" ;;
 esac
-export CADDY_ERRORLOG_OUTPUT
+export ERRORLOG CADDY_ERRORLOG_OUTPUT
+
+ERRORLOG_FORMAT="${ERRORLOG_FORMAT:-json}"
+case "${ERRORLOG_FORMAT}" in
+  json|console) ;;
+  *)
+    echo "ERRORLOG_FORMAT must be 'json' or 'console', got '${ERRORLOG_FORMAT}'" >&2
+    exit 1 ;;
+esac
+export ERRORLOG_FORMAT
 
 defined_envs=$(printf '${%s} ' $(awk "END { for (name in ENVIRON) { print ( name ~ /${filter}/ ) ? name : \"\" } }" < /dev/null ))
 

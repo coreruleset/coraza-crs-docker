@@ -177,7 +177,7 @@ A self-signed certificate is generated automatically at startup if no certificat
 
 | Variable | Default | Description |
 | - | - | - |
-| `ERRORLOG_FORMAT` | `json` | Error log format: `json` or `console` (plain text) |
+| `ERRORLOG_FORMAT` | `json` | Error log format: `json` or `console` (plain text). Any other value stops the container at startup |
 | `CORAZA_TAG` | `coraza` | **No longer applied.** See below. |
 
 `CORAZA_TAG` used to be interpolated into caddy's
@@ -199,6 +199,14 @@ The CRS regression suite is run with [go-ftw](https://github.com/coreruleset/go-
 | `LOGLEVEL` | `info` | NOTICE-severity rule matches are logged at `info` |
 | `ERRORLOG` | a file path, e.g. `/var/log/coraza/error.log` | go-ftw reads the log from a file; mount its directory |
 | `ERRORLOG_FORMAT` | `console` | go-ftw matches plain-text lines such as `[id "942100"]` |
+
+How `ERRORLOG` maps to Caddy's log writers:
+
+- `/dev/stderr`, `/dev/stdout` and `/dev/null` use Caddy's `stderr`, `stdout` and `discard` writers.
+- Any other `/dev/*` or `/proc/*` path is written as a file with rolling disabled.
+- A regular file is created with mode `0644`, like the nginx and Apache error logs, so a process on the host can read it from a bind mount. Caddy rolls it at 100 MB, except with `CRS_ENABLE_TEST_MARKER=1`: a roll in the middle of a go-ftw run would hide every later line.
+
+Caddy runs as uid 1000, so a bind-mounted log directory must be writable by that user (or run the container as `root`, as the CRS test setup does).
 
 ## Important Notes
 

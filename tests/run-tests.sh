@@ -251,6 +251,34 @@ assert_exec() {
   fi
 }
 
+# stream_logs <container> stdout|stderr — echo one output stream of a container.
+stream_logs() {
+  case "$2" in
+    stdout) docker logs "$1" 2>/dev/null ;;
+    stderr) docker logs "$1" 2>&1 >/dev/null ;;
+  esac
+}
+
+# assert_stream <container> stdout|stderr present|absent <fixed string> <description>
+# Logs can reach docker a moment after the response, so "present" retries for
+# a few seconds and "absent" waits that long before concluding.
+assert_stream() {
+  local container="$1" stream="$2" want="$3" needle="$4" desc="$5"
+  local out found=0 i
+  for i in 1 2 3 4 5; do
+    out="$(stream_logs "${container}" "${stream}")"
+    if grep -qF -- "${needle}" <<<"${out}"; then found=1; else found=0; fi
+    [ "${want}" = "present" ] && [ "${found}" -eq 1 ] && break
+    sleep 1
+  done
+  if { [ "${want}" = "present" ] && [ "${found}" -eq 1 ]; } \
+    || { [ "${want}" = "absent" ] && [ "${found}" -eq 0 ]; }; then
+    pass "${desc}"
+  else
+    fail "${desc}" "expected '${needle}' to be ${want} on ${stream} of ${container}"
+  fi
+}
+
 # ---------------------------------------------------------------------------
 # Setup
 # ---------------------------------------------------------------------------
@@ -456,42 +484,123 @@ assert_exec "${CUSTOMDIR_NAME}" 'test -d /tmp/custom-audit-test' \
 # Error log and CRS test marker (what go-ftw needs)
 # ---------------------------------------------------------------------------
 
+ATTACK="/?search=%3Cscript%3Ealert%281%29%3C%2Fscript%3E"
+WAF_JSON_LINE='"logger":"http.handlers.waf"'
+
+group "CRS_ENABLE_TEST_MARKER"
+
+# On Caddy, the marker container also uses the settings go-ftw needs. The log
+# path contains a space on purpose: it must survive the generated Caddyfile.
 if [ "${VARIANT}" = "caddy" ]; then
-  group "Error log (ERRORLOG, ERRORLOG_FORMAT) and CRS_ENABLE_TEST_MARKER"
-
-  # The default container has already blocked attacks above; its rule matches
-  # must still reach stderr as JSON. Capture first: with pipefail, grep -q
-  # closing the pipe early would fail the check through SIGPIPE.
-  MAIN_LOGS="$(docker logs "${MAIN_NAME}" 2>&1)"
-  if grep -q '"logger":"http.handlers.waf"' <<<"${MAIN_LOGS}"; then
-    pass "default error log is JSON on stderr"
-  else
-    fail "default error log is JSON on stderr" \
-      "no http.handlers.waf JSON line in docker logs of ${MAIN_NAME}"
-  fi
-
+  FTW_LOG="/var/log/coraza/ftw logs/error.log"
+  ACCESS_LOG="/var/log/caddy/access logs/access.log"
   start_waf testmarker \
     CRS_ENABLE_TEST_MARKER=1 \
     LOGLEVEL=info \
-    ERRORLOG=/var/log/coraza/error.log \
-    ERRORLOG_FORMAT=console
-  MARKER_NAME="${WAF_NAME}"
-  MARKER="${WAF_ENDPOINT}"
-  wait_for_http "${MARKER}" || die "${MARKER_NAME} did not start serving"
-  assert_status 200 "request carrying the marker header is not blocked" \
-    "${MARKER}" "/?search=%3Cscript%3Ealert%281%29%3C%2Fscript%3E" \
-    -H "X-CRS-Test: marker-${RUN_ID}"
+    "ERRORLOG=${FTW_LOG}" \
+    ERRORLOG_FORMAT=console \
+    "ACCESSLOG=${ACCESS_LOG}"
+else
+  start_waf testmarker CRS_ENABLE_TEST_MARKER=1
+fi
+MARKER_NAME="${WAF_NAME}"
+MARKER="${WAF_ENDPOINT}"
+wait_for_http "${MARKER}" || die "${MARKER_NAME} did not start serving"
+
+# The generated rule must name the header in msg, and keep msg and ctl on
+# separate lines (a single backslash in the heredoc used to join them).
+SETUP_CONF="${TMP_DIR}/crs-setup.conf"
+docker exec "${MARKER_NAME}" cat /opt/coraza/config/crs-setup.conf > "${SETUP_CONF}" 2>/dev/null
+MARKER_MSG="$(grep -A1 -F "msg:'X-CRS-Test %{MATCHED_VAR}',\\" "${SETUP_CONF}")"
+if grep -qx '    ctl:ruleRemoveById=1-999999"' <<<"${MARKER_MSG}"; then
+  pass "marker rule names X-CRS-Test in msg, with ctl on its own line"
+else
+  fail "marker rule names X-CRS-Test in msg, with ctl on its own line" \
+    "got: $(grep -A1 -F 'id:999999' "${SETUP_CONF}" | head -c 200)"
+fi
+assert_status 200 "request carrying the marker header is not blocked" \
+  "${MARKER}" "${ATTACK}" -H "X-CRS-Test: marker-${RUN_ID}"
+
+if [ "${VARIANT}" = "caddy" ]; then
   # go-ftw only accepts a marker line containing both "X-CRS-Test" and the
   # marker value, and matches plain-text [id "..."] fields.
   assert_exec "${MARKER_NAME}" \
-    "grep -F 'X-CRS-Test marker-${RUN_ID}' /var/log/coraza/error.log | grep -qF '[id \"999999\"]'" \
+    "grep -F 'X-CRS-Test marker-${RUN_ID}' '${FTW_LOG}' | grep -qF '[id \"999999\"]'" \
     "marker line is written in plain text to the ERRORLOG file"
   # NOTICE-severity matches are logged at info: 920330 (empty User-Agent,
   # paranoia level 1). curl sends an empty header for "User-Agent;".
   curl -s -o /dev/null --max-time 10 -H "User-Agent;" "http://${MARKER}/" || true
   assert_exec "${MARKER_NAME}" \
-    "grep -qF '[id \"920330\"]' /var/log/coraza/error.log" \
+    "grep -qF '[id \"920330\"]' '${FTW_LOG}'" \
     "NOTICE-severity rule match is logged with LOGLEVEL=info"
+  # Readable from a bind mount by another uid (go-ftw on the host); Caddy's
+  # own default is 0600.
+  assert_exec "${MARKER_NAME}" "test \"\$(stat -c %a '${FTW_LOG}')\" = 644" \
+    "ERRORLOG file is created with mode 0644"
+  assert_exec "${MARKER_NAME}" "test -s '${ACCESS_LOG}'" \
+    "ACCESSLOG path with a space is written"
+  # A roll at 100 MB in the middle of a go-ftw run would hide later lines.
+  assert_exec "${MARKER_NAME}" "grep -q roll_disabled /etc/caddy/Caddyfile" \
+    "ERRORLOG file is not rolled when CRS_ENABLE_TEST_MARKER=1"
+fi
+
+# ---------------------------------------------------------------------------
+# ERRORLOG and ERRORLOG_FORMAT (Caddy maps them to its own log writers)
+# ---------------------------------------------------------------------------
+
+if [ "${VARIANT}" = "caddy" ]; then
+  group "ERRORLOG / ERRORLOG_FORMAT (caddy)"
+
+  # Default: the stderr writer, JSON. The default container has already
+  # blocked attacks above.
+  assert_exec "${MAIN_NAME}" "grep -qE '^[[:space:]]*output stderr$' /etc/caddy/Caddyfile" \
+    "default ERRORLOG uses Caddy's stderr writer"
+  assert_stream "${MAIN_NAME}" stderr present "${WAF_JSON_LINE}" \
+    "default error log is JSON on stderr"
+  assert_stream "${MAIN_NAME}" stdout absent "${WAF_JSON_LINE}" \
+    "default error log is not on stdout"
+
+  start_waf errorlog-stdout ERRORLOG=/dev/stdout
+  STDOUT_NAME="${WAF_NAME}"
+  wait_for_http "${WAF_ENDPOINT}" || die "${STDOUT_NAME} did not start serving"
+  status "${WAF_ENDPOINT}" "${ATTACK}" >/dev/null
+  assert_exec "${STDOUT_NAME}" "grep -qE '^[[:space:]]*output stdout$' /etc/caddy/Caddyfile" \
+    "ERRORLOG=/dev/stdout uses Caddy's stdout writer"
+  assert_stream "${STDOUT_NAME}" stdout present "${WAF_JSON_LINE}" \
+    "ERRORLOG=/dev/stdout writes the error log to stdout"
+  assert_stream "${STDOUT_NAME}" stderr absent "${WAF_JSON_LINE}" \
+    "ERRORLOG=/dev/stdout writes nothing to stderr"
+
+  start_waf errorlog-null ERRORLOG=/dev/null
+  NULL_NAME="${WAF_NAME}"
+  wait_for_http "${WAF_ENDPOINT}" || die "${NULL_NAME} did not start serving"
+  status "${WAF_ENDPOINT}" "${ATTACK}" >/dev/null
+  assert_exec "${NULL_NAME}" "grep -qE '^[[:space:]]*output discard$' /etc/caddy/Caddyfile" \
+    "ERRORLOG=/dev/null uses Caddy's discard writer"
+  assert_stream "${NULL_NAME}" stderr absent "${WAF_JSON_LINE}" \
+    "ERRORLOG=/dev/null discards the error log"
+
+  # Other device paths are written as files, but never rolled.
+  start_waf errorlog-procfd ERRORLOG=/proc/self/fd/2
+  PROCFD_NAME="${WAF_NAME}"
+  wait_for_http "${WAF_ENDPOINT}" || die "${PROCFD_NAME} did not start serving"
+  status "${WAF_ENDPOINT}" "${ATTACK}" >/dev/null
+  assert_exec "${PROCFD_NAME}" \
+    "grep -A1 -F 'output file \"/proc/self/fd/2\"' /etc/caddy/Caddyfile | grep -q roll_disabled" \
+    "ERRORLOG=/proc/self/fd/2 is written without rolling"
+  assert_stream "${PROCFD_NAME}" stderr present "${WAF_JSON_LINE}" \
+    "ERRORLOG=/proc/self/fd/2 writes the error log to stderr"
+
+  # An invalid format must fail at startup with a message naming the variable,
+  # not with a Caddy module error.
+  BADFMT_OUT="$(docker run --rm --pull never -e ERRORLOG_FORMAT=text "${IMAGE}" 2>&1)"
+  BADFMT_STATUS=$?
+  if [ "${BADFMT_STATUS}" -ne 0 ] && grep -qF "ERRORLOG_FORMAT must be 'json' or 'console'" <<<"${BADFMT_OUT}"; then
+    pass "invalid ERRORLOG_FORMAT fails at startup with a clear message"
+  else
+    fail "invalid ERRORLOG_FORMAT fails at startup with a clear message" \
+      "exit ${BADFMT_STATUS}: $(tail -2 <<<"${BADFMT_OUT}")"
+  fi
 fi
 
 # ---------------------------------------------------------------------------
