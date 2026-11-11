@@ -5,6 +5,10 @@
 {
   order coraza_waf first
   log {
+    # Error log, including Coraza rule matches. CADDY_ERRORLOG_OUTPUT is set by
+    # the entrypoint from ERRORLOG.
+    output ${CADDY_ERRORLOG_OUTPUT}
+    format ${ERRORLOG_FORMAT}
     level ${LOGLEVEL}
   }
 }

@@ -183,6 +183,8 @@ ENV \
     CORAZA_UPLOAD_DIR=/tmp/coraza/upload \
     CORAZA_UPLOAD_FILE_MODE=0600 \
     CORAZA_UPLOAD_KEEP_FILES="Off" \
+    ERRORLOG=/dev/stderr \
+    ERRORLOG_FORMAT=json \
     KEEPALIVE_TIMEOUT=60s \
     LOGLEVEL=WARN \
     PORT=8080 \

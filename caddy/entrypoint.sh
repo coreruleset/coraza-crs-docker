@@ -11,6 +11,16 @@ mkdir -p "${CORAZA_TMP_DIR:-/tmp/coraza}" \
 
 echo "Generating configuration files..."
 
+# Map ERRORLOG to a Caddy log writer. /dev/stderr and /dev/stdout use Caddy's
+# own stderr/stdout writers: its file writer rolls the file at 100 MB by
+# default, which must not happen to a device. Anything else is a file path.
+case "${ERRORLOG:-/dev/stderr}" in
+  /dev/stderr) CADDY_ERRORLOG_OUTPUT="stderr" ;;
+  /dev/stdout) CADDY_ERRORLOG_OUTPUT="stdout" ;;
+  *) CADDY_ERRORLOG_OUTPUT="file ${ERRORLOG}" ;;
+esac
+export CADDY_ERRORLOG_OUTPUT
+
 defined_envs=$(printf '${%s} ' $(awk "END { for (name in ENVIRON) { print ( name ~ /${filter}/ ) ? name : \"\" } }" < /dev/null ))
 
 # Test if Caddyfile has been mounted in a volume by the user; if so that will be used rather than the default

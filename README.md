@@ -134,6 +134,7 @@ curl "http://localhost:8081/?id=1%20AND%201=1"
 | ANOMALY_INBOUND | `5` | Inbound anomaly score threshold |
 | ANOMALY_OUTBOUND | `4` | Outbound anomaly score threshold |
 | BLOCKING_PARANOIA | `1` | CRS Paranoia Level for blocking |
+| CRS_ENABLE_TEST_MARKER | (unset) | Set to `1` to add the marker rule (`id:999999`) used by the CRS regression tests. See [Running the CRS regression tests](#running-the-crs-regression-tests) |
 
 ### Web Server Specific
 
@@ -148,9 +149,9 @@ These variables apply to all variants (nginx, Apache, Caddy). Not every setting 
 | `WORKER_CONNECTIONS` | `1024` | Max concurrent connections per worker | ✅ | ✅ | — |
 | `KEEPALIVE_TIMEOUT` | `60s` | Client keepalive timeout | ✅ | ✅ | ✅ |
 | `PROXY_TIMEOUT` | `60s` | Backend proxy timeout | ✅ | ✅ | ✅ |
-| `LOGLEVEL` | `warn` | Server error log level | ✅ | ✅ | ✅ |
+| `LOGLEVEL` | `warn` | Server error log level. On Caddy, Coraza logs NOTICE-severity rule matches at `info`, so `warn` hides them | ✅ | ✅ | ✅ |
 | `ACCESSLOG` | `/dev/stdout` | Access log destination | ✅ | ✅ | ✅ |
-| `ERRORLOG` | `/dev/stderr` | Error log destination | ✅ | ✅ | — |
+| `ERRORLOG` | `/dev/stderr` | Error log destination, including Coraza rule matches | ✅ | ✅ | ✅ |
 | `SSL_PORT` | `8443` | HTTPS listen port | ✅ | ✅ | — |
 | `SSL_CERT_FILE` | (auto-generated) | TLS certificate path | ✅ | ✅ | — |
 | `SSL_CERT_KEY_FILE` | (auto-generated) | TLS private key path | ✅ | ✅ | — |
@@ -176,6 +177,7 @@ A self-signed certificate is generated automatically at startup if no certificat
 
 | Variable | Default | Description |
 | - | - | - |
+| `ERRORLOG_FORMAT` | `json` | Error log format: `json` or `console` (plain text) |
 | `CORAZA_TAG` | `coraza` | **No longer applied.** See below. |
 
 `CORAZA_TAG` used to be interpolated into caddy's
@@ -186,6 +188,17 @@ used it. Recent Coraza rejects metadata actions in `SecDefaultAction`
 and the variable is now inert on all three variants. To tag rules, set the
 `tag` action on the rules themselves — for example with an override in
 `/opt/coraza/overrides` — or filter logs on the rule ids instead.
+
+## Running the CRS regression tests
+
+The CRS regression suite is run with [go-ftw](https://github.com/coreruleset/go-ftw), which reads the WAF error log to find out which rules matched. For the Caddy variant, set:
+
+| Variable | Value | Why |
+| - | - | - |
+| `CRS_ENABLE_TEST_MARKER` | `1` | Adds the marker rule that go-ftw uses to delimit each test in the log |
+| `LOGLEVEL` | `info` | NOTICE-severity rule matches are logged at `info` |
+| `ERRORLOG` | a file path, e.g. `/var/log/coraza/error.log` | go-ftw reads the log from a file; mount its directory |
+| `ERRORLOG_FORMAT` | `console` | go-ftw matches plain-text lines such as `[id "942100"]` |
 
 ## Important Notes
 

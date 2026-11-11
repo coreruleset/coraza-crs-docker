@@ -453,6 +453,48 @@ assert_exec "${CUSTOMDIR_NAME}" 'test -d /tmp/custom-audit-test' \
   "entrypoint creates a custom CORAZA_AUDIT_STORAGE_DIR"
 
 # ---------------------------------------------------------------------------
+# Error log and CRS test marker (what go-ftw needs)
+# ---------------------------------------------------------------------------
+
+if [ "${VARIANT}" = "caddy" ]; then
+  group "Error log (ERRORLOG, ERRORLOG_FORMAT) and CRS_ENABLE_TEST_MARKER"
+
+  # The default container has already blocked attacks above; its rule matches
+  # must still reach stderr as JSON. Capture first: with pipefail, grep -q
+  # closing the pipe early would fail the check through SIGPIPE.
+  MAIN_LOGS="$(docker logs "${MAIN_NAME}" 2>&1)"
+  if grep -q '"logger":"http.handlers.waf"' <<<"${MAIN_LOGS}"; then
+    pass "default error log is JSON on stderr"
+  else
+    fail "default error log is JSON on stderr" \
+      "no http.handlers.waf JSON line in docker logs of ${MAIN_NAME}"
+  fi
+
+  start_waf testmarker \
+    CRS_ENABLE_TEST_MARKER=1 \
+    LOGLEVEL=info \
+    ERRORLOG=/var/log/coraza/error.log \
+    ERRORLOG_FORMAT=console
+  MARKER_NAME="${WAF_NAME}"
+  MARKER="${WAF_ENDPOINT}"
+  wait_for_http "${MARKER}" || die "${MARKER_NAME} did not start serving"
+  assert_status 200 "request carrying the marker header is not blocked" \
+    "${MARKER}" "/?search=%3Cscript%3Ealert%281%29%3C%2Fscript%3E" \
+    -H "X-CRS-Test: marker-${RUN_ID}"
+  # go-ftw only accepts a marker line containing both "X-CRS-Test" and the
+  # marker value, and matches plain-text [id "..."] fields.
+  assert_exec "${MARKER_NAME}" \
+    "grep -F 'X-CRS-Test marker-${RUN_ID}' /var/log/coraza/error.log | grep -qF '[id \"999999\"]'" \
+    "marker line is written in plain text to the ERRORLOG file"
+  # NOTICE-severity matches are logged at info: 920330 (empty User-Agent,
+  # paranoia level 1). curl sends an empty header for "User-Agent;".
+  curl -s -o /dev/null --max-time 10 -H "User-Agent;" "http://${MARKER}/" || true
+  assert_exec "${MARKER_NAME}" \
+    "grep -qF '[id \"920330\"]' /var/log/coraza/error.log" \
+    "NOTICE-severity rule match is logged with LOGLEVEL=info"
+fi
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 

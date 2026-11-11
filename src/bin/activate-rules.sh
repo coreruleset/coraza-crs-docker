@@ -134,14 +134,17 @@ if [ -n "${CRS_ENABLE_TEST_MARKER}" ] && [ ${CRS_ENABLE_TEST_MARKER} -eq 1 ] && 
   cat <<EOF >> "${setup_conf_path}"
 
 
-# Write the value from the X-CRS-Test header as a marker to the log
+# Write the value from the X-CRS-Test header as a marker to the log.
+# go-ftw only accepts a marker line that contains both "X-CRS-Test" and the
+# stage ID. Coraza's log line does not name the matched variable, so the
+# header name is part of the message (as in Coraza's own go-ftw setups).
 SecRule REQUEST_HEADERS:X-CRS-Test "@rx ^.*$" \\
     "id:999999,\\
     phase:1,\\
     pass,\\
     t:none,\\
     log,\\
-    msg:'%{MATCHED_VAR}',\
+    msg:'X-CRS-Test %{MATCHED_VAR}',\\
     ctl:ruleRemoveById=1-999999"
 EOF
 fi
