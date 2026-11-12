@@ -204,7 +204,7 @@ How `ERRORLOG` and `ACCESSLOG` map to Caddy's log writers (only when the image g
 
 - `/dev/stderr`, `/dev/stdout` and `/dev/null` use Caddy's `stderr`, `stdout` and `discard` writers.
 - A path that exists and isn't a regular file (a device, or the pipe `/proc/self/fd/2` is under Docker) is written without rolling.
-- `ERRORLOG` as a regular file is never rolled, like the nginx and Apache error logs. A new file is created `0644` (missing parent directories `0755`), so a process on the host can read it from a bind mount; an existing file keeps its owner and mode.
+- `ERRORLOG` as a regular file is never rolled, like the nginx and Apache error logs. A new file is created `0644` (missing parent directories `0755`), so a process on the host can read it from a bind mount; an existing file keeps its owner and mode. The error log holds the parts of requests that matched rules (payloads, header values): on a shared host, mount it where only trusted users can read it, or create the file beforehand, owned by the container user, with the mode you want (for example `0600`).
 - `ACCESSLOG` as a regular file keeps Caddy's defaults: mode `0600`, rolled at 100 MB.
 - Paths containing `"`, `\`, `{` or `}` are refused at startup: Caddy would read them as quoting or as `{$ENV}` placeholders.
 
