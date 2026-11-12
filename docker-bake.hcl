@@ -26,6 +26,14 @@ variable "coraza-caddy-version" {
     default = "v2.6.2"
 }
 
+# Go build tags Coraza is compiled with, in every image (comma-separated).
+# coraza.rule.no_regex_multiline: @rx no longer compiles patterns multi-line,
+# so ^ and $ anchor at the whole value as in ModSecurity v2 and CRS expects
+# (https://github.com/coreruleset/coreruleset/issues/3277).
+variable "coraza-build-tags" {
+    default = "coraza.rule.no_regex_multiline"
+}
+
 variable "golang-version" {
     # renovate: depName=golang datasource=docker
     default = "1.27"
@@ -122,6 +130,7 @@ target "platforms-base" {
     args = {
         CADDY_VERSION = "${caddy-version}"
         CORAZA_CADDY_VERSION = "${coraza-caddy-version}"
+        CORAZA_BUILD_TAGS = "${coraza-build-tags}"
     }
 }
 

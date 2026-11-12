@@ -8,10 +8,19 @@ FROM caddy:${CADDY_VERSION}-builder AS builder-caddy
 # Available tags are on the GitHub releases page here: https://github.com/corazawaf/coraza-caddy/tags
 ARG CORAZA_CADDY_VERSION="n/a"
 
+# Go build tags for Coraza. coraza.rule.no_regex_multiline stops @rx from
+# compiling every pattern multi-line, so ^ and $ anchor at the whole value as
+# in ModSecurity v2; Coraza documents the tag as aligning it with CRS.
+# See https://github.com/coreruleset/coreruleset/issues/3277
+ARG CORAZA_BUILD_TAGS="coraza.rule.no_regex_multiline"
+
 # Build Caddy with Coraza
 # The module path must carry the /v2 suffix: without it Go resolves the v1
 # module (coraza-caddy v1.2.2), whatever CORAZA_CADDY_VERSION says.
+# XCADDY_GO_BUILD_FLAGS replaces xcaddy's default flags, so they are restated
+# here (-ldflags '-w -s' -trimpath -tags nobadger,nomysql,nopgx) next to ours.
 RUN --mount=type=cache,target=/go,id=caddy \
+  XCADDY_GO_BUILD_FLAGS="-ldflags '-w -s' -trimpath -tags nobadger,nomysql,nopgx,${CORAZA_BUILD_TAGS}" \
   xcaddy build --with github.com/corazawaf/coraza-caddy/v2@${CORAZA_CADDY_VERSION}
 
 # Use official caddy builder image to get Core Rule Set
