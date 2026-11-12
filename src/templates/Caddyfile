@@ -65,7 +65,7 @@
   }
 
   log {
-		output file "${ACCESSLOG}"
+		output ${CADDY_ACCESSLOG_OUTPUT}
 	}
 
 
