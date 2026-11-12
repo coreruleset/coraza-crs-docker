@@ -75,6 +75,8 @@ TMP_DIR="$(mktemp -d)"
 # running until the end so their logs are still available if a later check
 # fails.
 CONTAINERS=()
+# Docker volumes created by the run, removed by cleanup().
+VOLUMES=()
 # Set by start_waf.
 WAF_NAME=""
 WAF_ENDPOINT=""
@@ -136,6 +138,9 @@ cleanup() {
     [ -n "${c}" ] && docker rm -f "${c}" >/dev/null 2>&1
   done
   docker rm -f "${BACKEND_NAME}" >/dev/null 2>&1
+  for v in "${VOLUMES[@]:-}"; do
+    [ -n "${v}" ] && docker volume rm -f "${v}" >/dev/null 2>&1
+  done
   docker network rm "${NETWORK}" >/dev/null 2>&1
   rm -rf "${TMP_DIR}"
 }
@@ -167,8 +172,9 @@ start_waf() {
   CONTAINERS+=("${name}")
 
   WAF_NAME="${name}"
-  WAF_ENDPOINT="$(docker port "${name}" 8080/tcp | head -1)" \
-    || die "could not read published port of ${name}"
+  # A container that already exited has no port: leave the endpoint empty, so
+  # the caller's wait_for_http fails (and dies, or records a failure).
+  WAF_ENDPOINT="$(docker port "${name}" 8080/tcp 2>/dev/null | head -1)" || WAF_ENDPOINT=""
 }
 
 # wait_for_http <host:port> — wait until the server proxies a request to the
@@ -177,6 +183,7 @@ start_waf() {
 # that have nothing wrong with them.
 wait_for_http() {
   local endpoint="$1"
+  [ -n "${endpoint}" ] || return 1
   local deadline=$((SECONDS + STARTUP_TIMEOUT))
   local code=""
   while [ "${SECONDS}" -lt "${deadline}" ]; do
@@ -248,6 +255,88 @@ assert_exec() {
     pass "${desc}"
   else
     fail "${desc}" "${out}"
+  fi
+}
+
+# caddyfile_block <container> <first line> — print the block of the generated
+# Caddyfile that starts with the line containing <first line>, so a check
+# looks at the right log block and not at the whole file.
+caddyfile_block() {
+  docker exec "$1" cat /etc/caddy/Caddyfile 2>/dev/null \
+    | awk -v p="$2" 'index($0, p) { f = 1 } f { print } f && /}/ { exit }'
+}
+
+# check_errorlog_writer <name> <ERRORLOG> <writer line> <stream> <present|absent>
+# Starts a container with that ERRORLOG, sends an attack, and checks the
+# generated writer line and where the WAF's log lines end up. Leaves the
+# container's name in WRITER_NAME for further checks.
+check_errorlog_writer() {
+  local name="$1" value="$2" line="$3" stream="$4" want="$5"
+  start_waf "errorlog-${name}" "ERRORLOG=${value}"
+  WRITER_NAME="${WAF_NAME}"
+  wait_for_http "${WAF_ENDPOINT}" || die "${WRITER_NAME} did not start serving"
+  status "${WAF_ENDPOINT}" "${ATTACK}" >/dev/null
+  if caddyfile_block "${WRITER_NAME}" "${line}" | grep -q .; then
+    pass "ERRORLOG=${value} → ${line}"
+  else
+    fail "ERRORLOG=${value} → ${line}" "$(docker exec "${WRITER_NAME}" sed -n '/^{/,/^}/p' /etc/caddy/Caddyfile 2>&1 | head -12)"
+  fi
+  assert_stream "${WRITER_NAME}" "${stream}" "${want}" "${WAF_JSON_LINE}" \
+    "ERRORLOG=${value}: WAF log lines ${want} on ${stream}"
+}
+
+# expect_start_failure <name> <message> <description> [env KEY=VALUE ...]
+# The container must stop on its own within STARTUP_TIMEOUT, with <message>
+# in its output. It runs detached and is registered for cleanup, so a
+# regression that lets it start can't hang the run.
+expect_start_failure() {
+  local suffix="$1" message="$2" desc="$3"; shift 3
+  local name="coraza-test-${suffix}-${RUN_ID}"
+  local args=(--pull never -d --name "${name}" --network "${NETWORK}" -e "BACKEND=${BACKEND_NAME}:80")
+  local e; for e in "$@"; do args+=(-e "${e}"); done
+  if ! docker run "${args[@]}" "${IMAGE}" >/dev/null; then
+    fail "${desc}" "docker run failed"; return 0
+  fi
+  CONTAINERS+=("${name}")
+  local deadline=$((SECONDS + STARTUP_TIMEOUT)) running="true"
+  while [ "${SECONDS}" -lt "${deadline}" ]; do
+    running="$(docker inspect -f '{{.State.Running}}' "${name}" 2>/dev/null)"
+    [ "${running}" = "false" ] && break
+    sleep 1
+  done
+  local out; out="$(docker logs "${name}" 2>&1)"
+  if [ "${running}" = "false" ] && grep -qF -- "${message}" <<<"${out}"; then
+    pass "${desc}"
+  else
+    fail "${desc}" "running=${running}: $(tail -2 <<<"${out}")"
+  fi
+}
+
+# stream_logs <container> stdout|stderr — echo one output stream of a container.
+stream_logs() {
+  case "$2" in
+    stdout) docker logs "$1" 2>/dev/null ;;
+    stderr) docker logs "$1" 2>&1 >/dev/null ;;
+  esac
+}
+
+# assert_stream <container> stdout|stderr present|absent <fixed string> <description>
+# Logs can reach docker a moment after the response, so "present" retries for
+# a few seconds and "absent" waits that long before concluding.
+assert_stream() {
+  local container="$1" stream="$2" want="$3" needle="$4" desc="$5"
+  local out found=0 i
+  for i in 1 2 3 4 5; do
+    out="$(stream_logs "${container}" "${stream}")"
+    if grep -qF -- "${needle}" <<<"${out}"; then found=1; else found=0; fi
+    [ "${want}" = "present" ] && [ "${found}" -eq 1 ] && break
+    sleep 1
+  done
+  if { [ "${want}" = "present" ] && [ "${found}" -eq 1 ]; } \
+    || { [ "${want}" = "absent" ] && [ "${found}" -eq 0 ]; }; then
+    pass "${desc}"
+  else
+    fail "${desc}" "expected '${needle}' to be ${want} on ${stream} of ${container}"
   fi
 }
 
@@ -451,6 +540,176 @@ CUSTOMDIR="${WAF_ENDPOINT}"
 wait_for_http "${CUSTOMDIR}" || die "${CUSTOMDIR_NAME} did not start serving"
 assert_exec "${CUSTOMDIR_NAME}" 'test -d /tmp/custom-audit-test' \
   "entrypoint creates a custom CORAZA_AUDIT_STORAGE_DIR"
+
+# ---------------------------------------------------------------------------
+# Error log and CRS test marker (what go-ftw needs)
+# ---------------------------------------------------------------------------
+
+ATTACK="/?search=%3Cscript%3Ealert%281%29%3C%2Fscript%3E"
+WAF_JSON_LINE='"logger":"http.handlers.waf"'
+
+group "CRS_ENABLE_TEST_MARKER"
+
+# On Caddy, the marker container also uses the settings go-ftw needs. The log
+# path contains a space on purpose: it must survive the generated Caddyfile.
+if [ "${VARIANT}" = "caddy" ]; then
+  FTW_LOG="/var/log/coraza/ftw logs/error.log"
+  ACCESS_LOG="/var/log/caddy/access logs/access.log"
+  start_waf testmarker \
+    CRS_ENABLE_TEST_MARKER=1 \
+    LOGLEVEL=info \
+    "ERRORLOG=${FTW_LOG}" \
+    ERRORLOG_FORMAT=console \
+    "ACCESSLOG=${ACCESS_LOG}"
+else
+  start_waf testmarker CRS_ENABLE_TEST_MARKER=1
+fi
+MARKER_NAME="${WAF_NAME}"
+MARKER="${WAF_ENDPOINT}"
+wait_for_http "${MARKER}" || die "${MARKER_NAME} did not start serving"
+
+# The generated rule must name the header in msg, and keep msg and ctl on
+# separate lines (a single backslash in the heredoc used to join them).
+SETUP_CONF="${TMP_DIR}/crs-setup.conf"
+docker exec "${MARKER_NAME}" cat /opt/coraza/config/crs-setup.conf > "${SETUP_CONF}" 2>/dev/null
+MARKER_MSG="$(grep -A1 -F "msg:'X-CRS-Test %{MATCHED_VAR}',\\" "${SETUP_CONF}")"
+if grep -qx '    ctl:ruleRemoveById=1-999999"' <<<"${MARKER_MSG}"; then
+  pass "marker rule names X-CRS-Test in msg, with ctl on its own line"
+else
+  fail "marker rule names X-CRS-Test in msg, with ctl on its own line" \
+    "got: $(grep -A1 -F 'id:999999' "${SETUP_CONF}" | head -c 200)"
+fi
+assert_status 200 "request carrying the marker header is not blocked" \
+  "${MARKER}" "${ATTACK}" -H "X-CRS-Test: marker-${RUN_ID}"
+
+if [ "${VARIANT}" = "caddy" ]; then
+  # go-ftw only accepts a marker line containing both "X-CRS-Test" and the
+  # marker value, and matches plain-text [id "..."] fields.
+  assert_exec "${MARKER_NAME}" \
+    "grep -F 'X-CRS-Test marker-${RUN_ID}' '${FTW_LOG}' | grep -qF '[id \"999999\"]'" \
+    "marker line is written in plain text to the ERRORLOG file"
+  # NOTICE-severity matches are logged at info: 920330 (empty User-Agent,
+  # paranoia level 1). curl sends an empty header for "User-Agent;".
+  curl -s -o /dev/null --max-time 10 -H "User-Agent;" "http://${MARKER}/" || true
+  assert_exec "${MARKER_NAME}" \
+    "grep -qF '[id \"920330\"]' '${FTW_LOG}'" \
+    "NOTICE-severity rule match is logged with LOGLEVEL=info"
+  # A new file is created 0644, like the nginx and Apache error logs.
+  assert_exec "${MARKER_NAME}" "test \"\$(stat -c %a '${FTW_LOG}')\" = 644" \
+    "a new ERRORLOG file is created with mode 0644"
+  # The real requirement: a different uid (go-ftw on the host) can open the
+  # file, including through the directory Caddy created for it.
+  if docker exec -u 65534:65534 "${MARKER_NAME}" cat "${FTW_LOG}" >/dev/null 2>&1; then
+    pass "ERRORLOG file is readable by another uid"
+  else
+    fail "ERRORLOG file is readable by another uid" "uid 65534 cannot open ${FTW_LOG}"
+  fi
+  assert_exec "${MARKER_NAME}" "test -s '${ACCESS_LOG}'" \
+    "ACCESSLOG path with a space is written"
+  # Never rolled, like the nginx and Apache error logs (a roll in the middle of
+  # a go-ftw run would also hide every later line from it). Checked in the
+  # ERRORLOG block itself, not anywhere in the Caddyfile.
+  if caddyfile_block "${MARKER_NAME}" "output file \"${FTW_LOG}\"" | grep -q roll_disabled; then
+    pass "ERRORLOG file is not rolled"
+  else
+    fail "ERRORLOG file is not rolled" "$(caddyfile_block "${MARKER_NAME}" "output file \"${FTW_LOG}\"")"
+  fi
+fi
+
+# ---------------------------------------------------------------------------
+# ERRORLOG, ACCESSLOG and ERRORLOG_FORMAT (Caddy maps them to its own writers)
+# ---------------------------------------------------------------------------
+
+if [ "${VARIANT}" = "caddy" ]; then
+  group "ERRORLOG / ACCESSLOG / ERRORLOG_FORMAT (caddy)"
+
+  # Default: the stderr writer, JSON. The default container has already
+  # blocked attacks above.
+  if caddyfile_block "${MAIN_NAME}" "output stderr" | grep -q .; then
+    pass "default ERRORLOG uses Caddy's stderr writer"
+  else
+    fail "default ERRORLOG uses Caddy's stderr writer"
+  fi
+  assert_stream "${MAIN_NAME}" stderr present "${WAF_JSON_LINE}" \
+    "default error log is JSON on stderr"
+  assert_stream "${MAIN_NAME}" stdout absent "${WAF_JSON_LINE}" \
+    "default error log is not on stdout"
+
+  #                     name     ERRORLOG                  writer in the Caddyfile             stream  WAF lines
+  check_errorlog_writer stdout   /dev/stdout               "output stdout"                     stdout  present
+  check_errorlog_writer null     /dev/null                 "output discard"                    stderr  absent
+  check_errorlog_writer procfd   /proc/self/fd/2           'output file "/proc/self/fd/2" {'   stderr  present
+  # /proc/self/fd/2 is a pipe under Docker: written without rolling.
+  if caddyfile_block "${WRITER_NAME}" 'output file "/proc/self/fd/2"' | grep -q roll_disabled; then
+    pass "ERRORLOG=/proc/self/fd/2 is written without rolling"
+  else
+    fail "ERRORLOG=/proc/self/fd/2 is written without rolling"
+  fi
+  # A regular file under /dev (tmpfs) is a file like any other, not a device.
+  check_errorlog_writer shm      /dev/shm/coraza/error.log 'output file "/dev/shm/coraza/error.log" {' stderr absent
+  if caddyfile_block "${WRITER_NAME}" 'output file "/dev/shm/coraza/error.log"' | grep -q 'mode 0644' \
+    && docker exec -u 65534:65534 "${WRITER_NAME}" cat /dev/shm/coraza/error.log >/dev/null 2>&1; then
+    pass "ERRORLOG under /dev/shm is a regular file: 0644, readable by another uid"
+  else
+    fail "ERRORLOG under /dev/shm is a regular file: 0644, readable by another uid" \
+      "$(caddyfile_block "${WRITER_NAME}" 'output file "/dev/shm/coraza/error.log"')"
+  fi
+
+  # An existing log file (e.g. created by the host on a bind mount) keeps its
+  # owner and mode; Caddy used to chmod it and exit silently when it couldn't.
+  LOG_VOLUME="coraza-test-logs-${RUN_ID}"
+  VOLUMES+=("${LOG_VOLUME}")
+  docker run --rm --pull never --user root --entrypoint sh -v "${LOG_VOLUME}:/logs" "${IMAGE}" \
+    -c 'touch /logs/error.log && chmod 666 /logs/error.log' >/dev/null 2>&1
+  start_waf existing-log ERRORLOG=/logs/error.log -- -v "${LOG_VOLUME}:/logs"
+  EXISTING_NAME="${WAF_NAME}"
+  if wait_for_http "${WAF_ENDPOINT}"; then
+    status "${WAF_ENDPOINT}" "${ATTACK}" >/dev/null
+    assert_exec "${EXISTING_NAME}" "test \"\$(stat -c '%a %u' /logs/error.log)\" = '666 0'" \
+      "an existing ERRORLOG file owned by someone else keeps its owner and mode"
+    assert_exec "${EXISTING_NAME}" "grep -q http.handlers.waf /logs/error.log" \
+      "an existing ERRORLOG file is written to"
+  else
+    fail "Caddy starts with an existing ERRORLOG file owned by someone else" \
+      "$(docker logs "${EXISTING_NAME}" 2>&1 | tail -2)"
+  fi
+
+  # ACCESSLOG goes through the same mapping: /dev/stdout is Caddy's stdout
+  # writer, not a file that would be renamed after 100 MB.
+  start_waf accesslog-stdout ACCESSLOG=/dev/stdout
+  ACCESS_NAME="${WAF_NAME}"
+  wait_for_http "${WAF_ENDPOINT}" || die "${ACCESS_NAME} did not start serving"
+  if [ "$(docker exec "${ACCESS_NAME}" grep -cE '^[[:space:]]*output stdout$' /etc/caddy/Caddyfile)" = 1 ] \
+    && ! docker exec "${ACCESS_NAME}" grep -qF 'output file "/dev/stdout"' /etc/caddy/Caddyfile; then
+    pass "ACCESSLOG=/dev/stdout uses Caddy's stdout writer"
+  else
+    fail "ACCESSLOG=/dev/stdout uses Caddy's stdout writer"
+  fi
+  assert_stream "${ACCESS_NAME}" stdout present '"logger":"http.log.access' \
+    "ACCESSLOG=/dev/stdout writes the access log to stdout"
+
+  # Bad values stop the container with a message naming the variable.
+  expect_start_failure badfmt "ERRORLOG_FORMAT must be 'json' or 'console'" \
+    "invalid ERRORLOG_FORMAT fails at startup with a clear message" ERRORLOG_FORMAT=text
+  expect_start_failure quote 'ERRORLOG must not contain' \
+    'ERRORLOG with a " fails at startup with a clear message' 'ERRORLOG=/var/log/coraza/a"b.log'
+  expect_start_failure placeholder 'ERRORLOG must not contain' \
+    'ERRORLOG with a {$…} placeholder fails at startup with a clear message' 'ERRORLOG=/var/log/coraza/{$HOME}.log'
+
+  # ...but only for the generated Caddyfile: with a mounted one they don't apply.
+  printf ':8080 {\n\trespond "mounted Caddyfile"\n}\n' > "${TMP_DIR}/Caddyfile"
+  chmod 644 "${TMP_DIR}/Caddyfile"
+  start_waf mounted-caddyfile ERRORLOG_FORMAT=text 'ERRORLOG=/x/{$HOME}' \
+    -- -v "${TMP_DIR}/Caddyfile:/config/caddy/Caddyfile:ro"
+  MOUNTED="${WAF_ENDPOINT}"
+  if wait_for_http "${MOUNTED}"; then
+    assert_body_contains "mounted Caddyfile" \
+      "a mounted Caddyfile starts even with ERRORLOG_FORMAT and ERRORLOG it doesn't use" "${MOUNTED}" "/"
+  else
+    fail "a mounted Caddyfile starts even with ERRORLOG_FORMAT and ERRORLOG it doesn't use" \
+      "$(docker logs "${WAF_NAME}" 2>&1 | tail -2)"
+  fi
+fi
 
 # ---------------------------------------------------------------------------
 # Summary
