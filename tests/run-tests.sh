@@ -537,6 +537,13 @@ if [ "${VARIANT}" = "caddy" ]; then
   # own default is 0600.
   assert_exec "${MARKER_NAME}" "test \"\$(stat -c %a '${FTW_LOG}')\" = 644" \
     "ERRORLOG file is created with mode 0644"
+  # The real requirement: a different uid (go-ftw on the host) can open the
+  # file, including through the directory Caddy created for it.
+  if docker exec -u 65534:65534 "${MARKER_NAME}" cat "${FTW_LOG}" >/dev/null 2>&1; then
+    pass "ERRORLOG file is readable by another uid"
+  else
+    fail "ERRORLOG file is readable by another uid" "uid 65534 cannot open ${FTW_LOG}"
+  fi
   assert_exec "${MARKER_NAME}" "test -s '${ACCESS_LOG}'" \
     "ACCESSLOG path with a space is written"
   # A roll at 100 MB in the middle of a go-ftw run would hide later lines.

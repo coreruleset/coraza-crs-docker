@@ -204,7 +204,7 @@ How `ERRORLOG` maps to Caddy's log writers:
 
 - `/dev/stderr`, `/dev/stdout` and `/dev/null` use Caddy's `stderr`, `stdout` and `discard` writers.
 - Any other `/dev/*` or `/proc/*` path is written as a file with rolling disabled.
-- A regular file is created with mode `0644`, like the nginx and Apache error logs, so a process on the host can read it from a bind mount. Caddy rolls it at 100 MB, except with `CRS_ENABLE_TEST_MARKER=1`: a roll in the middle of a go-ftw run would hide every later line.
+- A regular file is created with mode `0644`, like the nginx and Apache error logs, so a process on the host can read it from a bind mount. Missing parent directories are created `0755`. Caddy rolls it at 100 MB, except with `CRS_ENABLE_TEST_MARKER=1`: a roll in the middle of a go-ftw run would hide every later line.
 
 Caddy runs as uid 1000, so a bind-mounted log directory must be writable by that user (or run the container as `root`, as the CRS test setup does).
 

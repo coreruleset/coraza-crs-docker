@@ -19,7 +19,9 @@ echo "Generating configuration files..."
 # - Any other device or /proc path (e.g. /proc/self/fd/2) is written as a file
 #   with rolling disabled: a device must never be renamed.
 # - A regular file is created with mode 0644, like nginx and Apache error logs,
-#   so tools reading it from a bind mount (e.g. go-ftw) can open it. With
+#   so tools reading it from a bind mount (e.g. go-ftw) can open it. Missing
+#   parent directories get the matching mode (0755) instead of Caddy's 0700,
+#   or the file would still be out of reach. With
 #   CRS_ENABLE_TEST_MARKER=1 rolling is disabled too: a roll in the middle of a
 #   go-ftw run hides every later log line from it.
 # The path is quoted so that it may contain spaces.
@@ -35,7 +37,7 @@ case "${ERRORLOG}" in
     if [ "${CRS_ENABLE_TEST_MARKER:-0}" = "1" ]; then
       errorlog_roll="roll_disabled"
     fi
-    CADDY_ERRORLOG_OUTPUT="$(printf 'file "%s" {\n  mode 0644\n  %s\n}' "${ERRORLOG}" "${errorlog_roll}")" ;;
+    CADDY_ERRORLOG_OUTPUT="$(printf 'file "%s" {\n  mode 0644\n  dir_mode from_file\n  %s\n}' "${ERRORLOG}" "${errorlog_roll}")" ;;
 esac
 export ERRORLOG CADDY_ERRORLOG_OUTPUT
 
