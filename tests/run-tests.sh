@@ -406,6 +406,16 @@ assert_status 403 "SQL injection in POST body is blocked" \
 assert_status 403 "XSS in JSON body is blocked" \
   "${MAIN}" "/" -X POST -H "Content-Type: application/json" \
   -d '{"comment":"<script>alert(1)</script>"}'
+# Coraza is built with coraza.rule.no_regex_multiline, so @rx anchors work
+# as in ModSecurity v2: ^ and $ match at the ends of the whole value, not at
+# each line break (coreruleset/coreruleset#3277). The first request is the
+# control: the same payload on one line is still blocked by CRS 932171.
+assert_status 403 "shellshock-style argument is blocked (CRS 932171)" \
+  "${MAIN}" "/?arg=%28%29%20%7B%20%3A%3B%20%7D"
+assert_status 200 "^ anchors at the start of the value, not at a line start" \
+  "${MAIN}" "/?arg=comment%0a%28%29%20%7B%20%3A%3B%20%7D"
+assert_status 200 "\$ anchors at the end of the value, not before a newline" \
+  "${MAIN}" "/?x=file%3F%0a"
 # nginx and Apache answer TRACE themselves (405) before CRS rule 911100
 # gets a chance to deny it.
 assert_status_in "403 405" "disallowed HTTP method is rejected" \

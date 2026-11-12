@@ -217,6 +217,7 @@ Caddy runs as uid 1000, so a bind-mounted log directory must be writable by that
 - **Caddy** runs as a non-root user by default. The `cap_net_bind_service` capability is added to allow binding on ports < 1024. Default port is 8080.
 - **nginx** uses `nginxinc/nginx-unprivileged` (Debian-based, non-root). **Apache** uses `httpd` (Debian-based). Both build libcoraza and connector modules from source. Platforms: `linux/amd64` and `linux/arm64`.
 - The audit log defaults to `/dev/stdout` (visible via `docker logs`).
+- Coraza is built with the `coraza.rule.no_regex_multiline` tag, so `@rx` does not compile patterns multi-line: `^` and `$` match at the start and end of the whole value, as in ModSecurity v2 and as CRS expects ([coreruleset#3277](https://github.com/coreruleset/coreruleset/issues/3277)). A build without it matches `^`/`$` at every line break.
 
 ## Configuration Files/Directories
 
@@ -247,6 +248,7 @@ The following configuration paths are shared across all variants:
 | `CORAZA_CADDY_VERSION` | `v2.6.2` | coraza-caddy release (caddy variant) |
 | `CORAZA_NGINX_VERSION` | `0.23.0` | coraza-nginx release (nginx variant) |
 | `CORAZA_APACHE_VERSION` | `0.22.0` | coraza-apache release (apache variant) |
+| `CORAZA_BUILD_TAGS` | `coraza.rule.no_regex_multiline` | Go build tags Coraza is compiled with, comma-separated (all variants) |
 
 ## Building
 

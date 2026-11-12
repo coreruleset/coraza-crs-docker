@@ -7,6 +7,11 @@ ARG GOLANG_VERSION="1.27@sha256:3680233e3204827fbdc66088528ae6d4b3d034f51d03a99d
 FROM golang:${GOLANG_VERSION} AS go-builder
 
 ARG LIBCORAZA_VERSION="n/a"
+# Go build tags for Coraza. coraza.rule.no_regex_multiline stops @rx from
+# compiling every pattern multi-line, so ^ and $ anchor at the whole value as
+# in ModSecurity v2; Coraza documents the tag as aligning it with CRS.
+# See https://github.com/coreruleset/coreruleset/issues/3277
+ARG CORAZA_BUILD_TAGS="coraza.rule.no_regex_multiline"
 
 RUN set -eux; \
     apt-get update -qq; \
@@ -27,7 +32,7 @@ RUN set -eux; \
     cd /tmp/libcoraza; \
     ./build.sh; \
     ./configure; \
-    make; \
+    GOFLAGS="-tags=${CORAZA_BUILD_TAGS}" make; \
     cp libcoraza.a /usr/local/lib/; \
     cp libcoraza.so /usr/local/lib/; \
     mkdir -p /usr/local/include/coraza; \
