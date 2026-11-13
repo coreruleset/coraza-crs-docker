@@ -241,7 +241,7 @@ The following configuration paths are shared across all variants:
 | Variable | Default | Description |
 | -------- | ------- | ----------- |
 | `CRS_VERSION` | `4.25.2` | OWASP CRS release version (LTS) |
-| `CADDY_VERSION` | `2.11.6` | Caddy Docker tag (caddy variant) |
+| `CADDY_VERSION` | `2.11.8` | Caddy Docker tag (caddy variant) |
 | `NGINX_VERSION` | `1.30.6` | nginx image version (nginx variant) |
 | `HTTPD_VERSION` | `2.4` | httpd image version (apache variant) |
 | `LIBCORAZA_VERSION` | `v1.8.0` | libcoraza release (nginx/apache variants) |
