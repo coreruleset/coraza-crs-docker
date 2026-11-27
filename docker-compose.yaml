@@ -28,7 +28,7 @@ services:
         # renovate: depName=coreruleset-v4-lts packageName=coreruleset/coreruleset datasource=github-releases
         CRS_VERSION: "4.25.2"
         # renovate: depName=caddy datasource=docker
-        CADDY_VERSION: "2.11.6"
+        CADDY_VERSION: "2.11.9"
         # renovate: depName=corazawaf/coraza-caddy datasource=github-releases
         CORAZA_CADDY_VERSION: "v2.6.2"
     depends_on:
@@ -53,7 +53,7 @@ services:
         # renovate: depName=golang datasource=docker
         GOLANG_VERSION: "1.27"
         # renovate: depName=corazawaf/libcoraza datasource=github-releases
-        LIBCORAZA_VERSION: "v1.8.0"
+        LIBCORAZA_VERSION: "v1.8.1"
         # renovate: depName=corazawaf/coraza-nginx datasource=github-releases
         CORAZA_NGINX_VERSION: "0.23.0"
         # renovate: depName=nginxinc/nginx-unprivileged datasource=docker
@@ -81,7 +81,7 @@ services:
         # renovate: depName=golang datasource=docker
         GOLANG_VERSION: "1.27"
         # renovate: depName=corazawaf/libcoraza datasource=github-releases
-        LIBCORAZA_VERSION: "v1.8.0"
+        LIBCORAZA_VERSION: "v1.8.1"
         # renovate: depName=corazawaf/coraza-apache datasource=github-releases
         CORAZA_APACHE_VERSION: "0.22.0"
         # renovate: depName=httpd datasource=docker
